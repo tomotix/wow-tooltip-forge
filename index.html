@@ -96,10 +96,27 @@
         }
         
         @media (max-width: 900px) {
-            .container { flex-direction: column; }
-            .preview-panel { order: 1; height: 40vh; flex: none; border-bottom: 1px solid var(--border-color); padding: 10px; }
-            .controls-panel { order: 2; width: 100%; height: 60vh; border-right: none; }
-            #tooltip-render-area { transform-origin: center center; transform: scale(0.9); }
+            body { height: auto; overflow-y: auto; } /* Allow full page scrolling on mobile */
+            .container { flex-direction: column; height: auto; }
+            
+            .preview-panel { 
+                order: 1; 
+                min-height: 450px; /* Ensure enough space for the canvas */
+                height: auto; 
+                flex: none; 
+                border-bottom: 1px solid var(--border-color); 
+                padding: 20px; 
+            }
+            
+            .controls-panel { 
+                order: 2; 
+                width: 100%; 
+                height: auto; /* Remove fixed height */
+                border-right: none; 
+                overflow-y: visible; /* Let the body scroll handle it */
+            }
+            
+            #tooltip-render-area { transform-origin: center center; transform: scale(0.85); }
         }
 
         /* --- COMPACT UI --- */
@@ -561,7 +578,9 @@
                     </div>
                 </div>
             </div>
-            <p style="margin-top:20px; color:#666; font-size:12px;">Preview updates automatically</p>
+            <p style="margin-top:20px; color:#666; font-size:12px; text-align: center; max-width: 400px; line-height: 1.4;">
+                World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This website is a fan-made project and is not affiliated with, endorsed, sponsored, or specifically approved by Blizzard Entertainment. All original assets and content are property of their respective owners.
+            </p>
         </div>
     </div>
     
@@ -618,21 +637,30 @@
         ];
 
         window.onload = () => {
+            // Default Mace Icon
             document.getElementById('display-icon').src = "https://wow.zamimg.com/images/wow/icons/large/inv_mace_01.jpg";
+            
+            // Render basic inputs
             renderStatInputs(); 
             renderClassInputs(); 
             handleCategoryChange(); 
+            
+            // Set Default States from user query
             setEra('classic');
             setBorder('retail'); 
             setFont('retail'); 
 
+            // Programmatically set default stat values
             const strChk = document.getElementById('chk-stat-Strength');
             if(strChk) { strChk.checked = true; toggleStatInput('Strength'); document.getElementById('val-stat-Strength').value = 10; }
+            
             const intChk = document.getElementById('chk-stat-Intellect');
             if(intChk) { intChk.checked = true; toggleStatInput('Intellect'); document.getElementById('val-stat-Intellect').value = 10; }
+
             const fireChk = document.getElementById('chk-stat-FireResistance');
             if(fireChk) { fireChk.checked = true; toggleStatInput('FireResistance'); document.getElementById('val-stat-FireResistance').value = 15; }
 
+            // Programmatically set default classes
             document.querySelectorAll('.chk-class-item').forEach(chk => {
                 if(chk.value === 'Mage' || chk.value === 'Druid') chk.checked = true;
             });
