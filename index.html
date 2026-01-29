@@ -96,27 +96,32 @@
         }
         
         @media (max-width: 900px) {
-            body { height: auto; overflow-y: auto; } /* Allow full page scrolling on mobile */
-            .container { flex-direction: column; height: auto; }
-            
-            .preview-panel { 
-                order: 1; 
-                min-height: 450px; /* Ensure enough space for the canvas */
-                height: auto; 
-                flex: none; 
-                border-bottom: 1px solid var(--border-color); 
-                padding: 20px; 
+            .container {
+                flex-direction: column; /* Stack vertically */
+            }
+
+            .preview-panel {
+                order: 1; /* Show Preview FIRST */
+                height: 50vh; /* Takes top 50% of screen */
+                flex: none; /* Disable flex-grow */
+                border-bottom: 1px solid var(--border-color);
+                padding: 10px; /* Reduce padding on mobile */
+                overflow: hidden;
+            }
+
+            .controls-panel {
+                order: 2; /* Show Controls SECOND */
+                width: 100%; /* Full width */
+                height: 50vh; /* Takes bottom 50% of screen */
+                border-right: none;
+                overflow-y: auto;
             }
             
-            .controls-panel { 
-                order: 2; 
-                width: 100%; 
-                height: auto; /* Remove fixed height */
-                border-right: none; 
-                overflow-y: visible; /* Let the body scroll handle it */
+            /* Scale down tooltip slightly on small screens if needed */
+            #tooltip-render-area {
+                transform-origin: center center;
+                transform: scale(0.75);
             }
-            
-            #tooltip-render-area { transform-origin: center center; transform: scale(0.85); }
         }
 
         /* --- COMPACT UI --- */
