@@ -105,7 +105,7 @@
                 height: 50vh; /* Takes top 50% of screen */
                 flex: none; /* Disable flex-grow */
                 border-bottom: 1px solid var(--border-color);
-                padding: 10px; /* Reduce padding on mobile */
+                padding: 40px 20px; /* Added breathing room at top */
                 overflow: hidden;
             }
 
@@ -115,12 +115,18 @@
                 height: 50vh; /* Takes bottom 50% of screen */
                 border-right: none;
                 overflow-y: auto;
+                padding: 20px 20px 60px 20px; /* Added breathing room at bottom for button */
             }
             
             /* Scale down tooltip slightly on small screens if needed */
             #tooltip-render-area {
                 transform-origin: center center;
                 transform: scale(0.75);
+            }
+
+            /* Hide copyright text on mobile */
+            .copyright-text {
+                display: none !important;
             }
         }
 
@@ -583,7 +589,7 @@
                     </div>
                 </div>
             </div>
-            <p style="margin-top:20px; color:#666; font-size:12px; text-align: center; max-width: 400px; line-height: 1.4;">
+            <p class="copyright-text" style="margin-top:20px; color:#666; font-size:12px; text-align: center; max-width: 400px; line-height: 1.4;">
                 World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This website is a fan-made project and is not affiliated with, endorsed, sponsored, or specifically approved by Blizzard Entertainment. All original assets and content are property of their respective owners.
             </p>
         </div>
