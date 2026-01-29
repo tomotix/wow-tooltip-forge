@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WoW Tooltip Creator</title>
+    <!-- HTML2Canvas for downloading images -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1b1b1b; /* Sidebar background */
+            --text-color: #e0e0e0;
+            --accent-color: #e66306; /* Accent color */
+            --border-color: #333;
+            
+            /* WoW Quality Colors */
+            --q-poor: #9d9d9d;
+            --q-common: #ffffff;
+            --q-uncommon: #1eff00;
+            --q-rare: #0070dd;
+            --q-epic: #a335ee;
+            --q-legendary: #ff8000;
+            --q-artifact: #e6cc80;
+            --q-heirloom: #00ccff;
+
+            /* Tooltip Specifics */
+            --classic-bg: rgba(5, 5, 5, 0.9);
+            --retail-bg: rgba(12, 12, 20, 0.95);
+        }
+
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- CUSTOM SCROLLBAR --- */
+        .controls-panel::-webkit-scrollbar {
+            width: 10px;
+        }
+        .controls-panel::-webkit-scrollbar-track {
+            background: #1b1b1b;
+        }
+        .controls-panel::-webkit-scrollbar-thumb {
+            background: #e66306;
+            border-radius: 5px;
+        }
+        /* Firefox support */
+        .controls-panel {
+            scrollbar-width: thin;
+            scrollbar-color: #e66306 #1b1b1b;
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: row; 
+        }
+
+        .controls-panel {
+            width: 450px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .preview-panel {
+            flex: 1;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/World_of_Warcraft_Logo.svg/1200px-World_of_Warcraft_Logo.svg.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+            /* Updated Canvas Background - Solid #111111, no dots */
+            background-color: #111111;
+        }
+        
+        @media (max-width: 900px) {
+            .container { flex-direction: column; }
+            .preview-panel { order: 1; height: 40vh; flex: none; border-bottom: 1px solid var(--border-color); padding: 10px; }
+            .controls-panel { order: 2; width: 100%; height: 60vh; border-right: none; }
+            #tooltip-render-area { transform-origin: center center; transform: scale(0.9); }
+        }
+
+        /* --- COMPACT UI --- */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .settings-grid.triple {
+             grid-template-columns: 1.5fr 1fr;
+        }
+
+        h2 { font-size: 1.2rem; margin-bottom: 5px; color: var(--accent-color); }
+        h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-top: 10px; margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 3px; }
+
+        .btn-group {
+            display: flex;
+            background: #000;
+            border-radius: 6px;
+            padding: 3px;
+            gap: 3px;
+        }
+        .btn-toggle {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #777;
+            padding: 6px 4px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-toggle:hover { color: #fff; background: #222; }
+        .btn-toggle.active {
+            background: var(--accent-color);
+            color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .form-group { margin-bottom: 8px; }
+        .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 3px; }
+        
+        input[type="checkbox"] { width: auto !important; cursor: pointer; accent-color: var(--accent-color); margin-right: 8px; }
+        input[type="text"], input[type="number"], select, textarea {
+            width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 6px 8px; border-radius: 4px; font-size: 0.85rem;
+        }
+        select#inp-quality option { background: #111; font-weight: bold; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); }
+        textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+
+        .hidden { display: none !important; }
+
+        /* Quality Color Classes */
+        .q-poor { color: var(--q-poor) !important; }
+        .q-common { color: var(--q-common) !important; }
+        .q-uncommon { color: var(--q-uncommon) !important; }
+        .q-rare { color: var(--q-rare) !important; }
+        .q-epic { color: var(--q-epic) !important; }
+        .q-legendary { color: var(--q-legendary) !important; }
+        .q-artifact { color: var(--q-artifact) !important; }
+        .q-heirloom { color: var(--q-heirloom) !important; }
+
+        /* Stats Builder */
+        .stats-builder { background: #111; border: 1px solid #333; border-radius: 4px; padding: 8px; }
+        .stat-row { display: flex; align-items: center; margin-bottom: 6px; justify-content: space-between; }
+        .stat-check { display: flex; align-items: center; cursor: pointer; color: #ccc; font-size: 0.85rem; flex: 1; }
+        .stat-input { width: 65px !important; padding: 4px 6px !important; height: 26px; font-size: 0.8rem !important; }
+
+        /* Class Grid */
+        .class-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; }
+        .class-checkbox { display: flex; align-items: center; color: #ccc; font-size: 0.75rem; cursor: pointer; }
+
+        .btn-add-stat, .btn-add-line { background: #333; color: #ccc; border: 1px dashed #555; width: 100%; padding: 6px; margin-top: 5px; cursor: pointer; font-size: 0.8rem; border-radius: 4px; }
+        .custom-stat-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; }
+        .custom-val-input { width: 60px !important; }
+
+        /* Icon Picker */
+        .icon-picker-row { display: flex; gap: 8px; }
+        .btn-icon-action { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: #e0e0e0; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+
+        /* Modal */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: #1a1a1a; border: 1px solid #444; width: 90%; max-width: 600px; height: 80%; border-radius: 8px; display: flex; flex-direction: column; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        /* Fixed Library Display - 1:1 Squares */
+        .icon-grid { 
+            flex: 1; 
+            overflow-y: auto; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); 
+            gap: 10px; 
+            padding: 10px; 
+            background: #111; 
+            border: 1px solid #333; 
+        }
+        .icon-option { 
+            width: 100%; 
+            position: relative; 
+            background: #000; 
+            border: 1px solid #333; 
+            cursor: pointer; 
+            aspect-ratio: 1 / 1; /* Enforce 1:1 ratio */
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon-option img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        .icon-option:hover {
+            border-color: var(--accent-color);
+            z-index: 1;
+        }
+
+        .btn-download { background: var(--accent-color); color: #fff; border: none; padding: 10px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 4px; }
+
+        /* --- THE TOOLTIP --- */
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
+
+        #tooltip-render-area { position: relative; padding: 20px; display: inline-block; }
+        .tooltip-wrapper { display: flex; align-items: flex-start; gap: 5px; }
+        .tooltip-icon-container { width: 56px; height: 56px; flex-shrink: 0; position: relative; }
+        .tooltip-icon { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+
+        .wow-tooltip { width: 350px; min-height: 100px; padding: 12px; border-radius: 4px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.8); cursor: default; user-select: none; }
+        
+        /* Font Splitting */
+        .font-classic { font-family: 'Merriweather', serif; }
+        .font-classic .tooltip-title { font-weight: 700; text-shadow: 1px 1px 0 #000; letter-spacing: 0.5px; }
+        .font-retail { font-family: 'Open Sans', sans-serif; }
+        .font-retail .tooltip-title { letter-spacing: 0.5px; font-weight: 600; text-shadow: 1px 1px 2px #000; }
+
+        /* Border Splitting */
+        .border-classic { background-color: var(--classic-bg); border: 2px solid #a8a8a8; border-color: #cfcfcf #505050 #505050 #cfcfcf; }
+        .border-retail { background-color: var(--retail-bg); border: 1px solid #555; box-shadow: 0 0 0 1px #000, 0 0 10px rgba(0,0,0,0.5); }
+        
+        /* Icon styles tied to Border selection */
+        .border-classic-icon .tooltip-icon { border: 1px solid #aaa; border-radius: 0; }
+        .border-retail-icon .tooltip-icon { border: 1px solid #333; }
+
+        .tooltip-header { display: flex; gap: 12px; margin-bottom: 2px; }
+        .tooltip-text-col { display: flex; flex-direction: column; justify-content: center; width: 100%; }
+        .tooltip-title { font-size: 18px; margin-bottom: 2px; line-height: 1.2; }
+        .tooltip-sub { font-size: 13px; color: #fff; margin-bottom: 4px; }
+        .text-right { float: right; }
+        .line-group { font-size: 13px; color: #ffd100; line-height: 1.5; }
+        .line-white { color: #fff; }
+        .line-green { color: #1eff00; }
+        .line-gold { color: #ffd100; }
+        .line-flavor { color: #ffd100; font-style: italic; margin-top: 10px; opacity: 0.9; }
+        .line-grey { color: #9d9d9d; }
+        .stat-line { display: flex; justify-content: space-between; color: #fff; font-size: 13px; }
+        .item-property { display: block; }
+
+        /* Socket Styles */
+        .socket-row { display: flex; align-items: center; gap: 6px; color: #9d9d9d; font-size: 13px; margin-bottom: 2px; }
+        .socket-box { width: 14px; height: 14px; border: 1px solid #333; flex-shrink: 0; }
+
+        /* Helper Classes */
+        .classic-helper { background: #191919; border: 1px solid #333; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+        .helper-row { display: flex; gap: 5px; margin-top: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- CONTROLS -->
+        <div class="controls-panel">
+            <h2>WoW Tooltip Creator</h2>
+            
+            <div class="settings-grid triple">
+                <div>
+                    <h3>Base Type</h3>
+                    <div class="btn-group" id="group-base">
+                        <button class="btn-toggle active" onclick="setBase('item')">Item</button>
+                        <button class="btn-toggle" onclick="setBase('spell')">Spell</button>
+                        <button class="btn-toggle" onclick="setBase('talent')">Talent</button>
+                    </div>
+                </div>
+                <div>
+                    <h3>Data Mode</h3>
+                    <div class="btn-group" id="group-era">
+                        <button class="btn-toggle active" onclick="setEra('classic')">Classic</button>
+                        <button class="btn-toggle" onclick="setEra('retail')">Modern</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-grid">
+                <div>
+                    <h3>Border</h3>
+                    <div class="btn-group" id="group-border">
+                        <button class="btn-toggle" onclick="setBorder('classic')">Classic</button>
+                        <button class="btn-toggle active" onclick="setBorder('retail')">Modern</button>
+                    </div>
+                </div>
+                <div>
+                    <h3>Font</h3>
+                    <div class="btn-group" id="group-font">
+                        <button class="btn-toggle" onclick="setFont('classic')">Classic</button>
+                        <button class="btn-toggle active" onclick="setFont('retail')">Modern</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="inp-name" value="The Guild-Forge Gavel" oninput="updateTooltip()">
+            </div>
+
+            <div class="form-group">
+                <label>Icon</label>
+                <div class="icon-picker-row">
+                    <button class="btn-icon-action" onclick="openIconModal()">🔍 Library</button>
+                    <label class="btn-icon-action">
+                        📁 Upload
+                        <input type="file" id="inp-icon-file" accept="image/*" onchange="handleIconUpload()" hidden>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="group-quality">
+                <label>Quality</label>
+                <select id="inp-quality" onchange="updateTooltip()">
+                    <option value="q-poor" style="color: var(--q-poor)">Poor</option>
+                    <option value="q-common" style="color: var(--q-common)">Common</option>
+                    <option value="q-uncommon" style="color: var(--q-uncommon)">Uncommon</option>
+                    <option value="q-rare" style="color: var(--q-rare)">Rare</option>
+                    <option value="q-epic" style="color: var(--q-epic)">Epic</option>
+                    <option value="q-legendary" style="color: var(--q-legendary)" selected>Legendary</option>
+                    <option value="q-artifact" style="color: var(--q-artifact)">Artifact</option>
+                    <option value="q-heirloom" style="color: var(--q-heirloom)">Heirloom</option>
+                </select>
+            </div>
+
+            <!-- ITEM SPECIFIC -->
+            <div id="fields-item">
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <div class="label-row"><label>iLvl</label><input type="checkbox" id="chk-ilvl" checked onchange="updateTooltip()"></div>
+                        <input type="text" id="inp-ilvl" value="67" oninput="updateTooltip()">
+                    </div>
+                    <div class="form-group">
+                        <label>Binding</label>
+                        <select id="inp-binding" onchange="updateTooltip()">
+                            <option value="Binds when picked up" selected>BoP</option>
+                            <option value="Binds when equipped">BoE</option>
+                            <option value="Binds to Account">Account</option>
+                            <option value="">None</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="inp-category" onchange="handleCategoryChange()">
+                        <option value="weapon" selected>Weapon</option>
+                        <option value="armor">Armor</option>
+                        <option value="jewelry">Jewelry</option>
+                        <option value="relic">Relic</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div id="cat-armor" class="hidden">
+                    <div class="settings-grid">
+                        <div class="form-group"><label>Material</label><select id="inp-armor-material" onchange="updateTooltip()"><option>Cloth</option><option>Leather</option><option>Mail</option><option>Plate</option></select></div>
+                        <div class="form-group"><label>Slot</label><select id="inp-armor-slot" onchange="updateTooltip()"><option>Head</option><option>Shoulder</option><option>Chest</option><option>Waist</option><option>Legs</option><option>Feet</option></select></div>
+                    </div>
+                </div>
+
+                <div id="cat-weapon" class="form-group">
+                    <label>Weapon Type</label>
+                    <select id="inp-weapon-type" onchange="updateTooltip()">
+                        <optgroup label="One-Handed">
+                            <option value="One-Hand Mace" selected>One-Hand Mace</option>
+                            <option value="One-Hand Sword">One-Hand Sword</option>
+                            <option value="One-Hand Axe">One-Hand Axe</option>
+                            <option value="Dagger">Dagger</option>
+                            <option value="Fist Weapon">Fist Weapon</option>
+                        </optgroup>
+                        <optgroup label="Two-Handed">
+                            <option value="Polearm">Polearm</option>
+                            <option value="Two-Hand Sword">Two-Hand Sword</option>
+                            <option value="Two-Hand Axe">Two-Hand Axe</option>
+                            <option value="Two-Hand Mace">Two-Hand Mace</option>
+                            <option value="Staff">Staff</option>
+                        </optgroup>
+                        <optgroup label="Ranged">
+                            <option value="Bow">Bow</option>
+                            <option value="Crossbow">Crossbow</option>
+                            <option value="Gun">Gun</option>
+                            <option value="Wand">Wand</option>
+                            <option value="Thrown">Thrown</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div id="cat-jewelry" class="form-group hidden">
+                    <label>Jewelry Type</label>
+                    <select id="inp-jewelry-type" onchange="updateTooltip()">
+                        <option value="Neck">Neck</option>
+                        <option value="Finger">Ring</option>
+                        <option value="Trinket">Trinket</option>
+                    </select>
+                </div>
+
+                <div id="cat-relic" class="form-group hidden">
+                    <label>Relic Type</label>
+                    <select id="inp-relic-type" onchange="updateTooltip()">
+                        <option value="Libram">Libram</option>
+                        <option value="Idol">Idol</option>
+                        <option value="Totem">Totem</option>
+                        <option value="Sigil">Sigil</option>
+                    </select>
+                </div>
+
+                <div id="cat-other" class="form-group hidden">
+                    <label>Type</label>
+                    <select id="inp-other-type" onchange="updateTooltip()">
+                        <option value="Cloak">Cloak</option>
+                        <option value="Shield">Shield</option>
+                        <option value="Held In Off-hand">Held In Off-hand</option>
+                        <option value="Shirt">Shirt</option>
+                        <option value="Tabard">Tabard</option>
+                        <option value="Miscellaneous">Miscellaneous</option>
+                    </select>
+                </div>
+                
+                <div class="form-group hidden" id="group-armor">
+                    <label>Armor Amount</label>
+                    <input type="number" id="inp-armor" placeholder="e.g. 500" oninput="updateTooltip()">
+                </div>
+
+                <div class="form-group" id="group-weapon-stats">
+                    <div class="label-row"><label>Weapon Stats</label><div><input type="checkbox" id="chk-show-dps" checked onchange="updateTooltip()"><span style="font-size:0.7rem; color:#888;">DPS</span></div></div>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="inp-dmg-min" placeholder="Min" value="33" oninput="updateTooltip()">
+                        <input type="text" id="inp-dmg-max" placeholder="Max" value="57" oninput="updateTooltip()">
+                        <input type="text" id="inp-speed" placeholder="Spd" value="2.60" oninput="updateTooltip()">
+                    </div>
+                </div>
+
+                <h3>Stats</h3>
+                <div class="stats-builder" id="stats-container"></div>
+                <div id="custom-stats-container"></div>
+                <button class="btn-add-stat" onclick="addCustomStat()">+ Custom Stat</button>
+
+                <h3>Sockets</h3>
+                <div class="form-group">
+                    <div style="display: flex; gap: 5px;">
+                        <select class="inp-socket" onchange="updateTooltip()"><option value="">None</option><option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option><option>Purple</option><option>Orange</option><option>Meta</option></select>
+                        <select class="inp-socket" onchange="updateTooltip()"><option value="">None</option><option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option><option>Purple</option><option>Orange</option><option>Meta</option></select>
+                        <select class="inp-socket" onchange="updateTooltip()"><option value="">None</option><option>Red</option><option>Yellow</option><option>Blue</option><option>Green</option><option>Purple</option><option>Orange</option><option>Meta</option></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="label-row"><label>Socket Bonus</label><input type="checkbox" id="chk-socket-bonus" onchange="updateTooltip()"></div>
+                    <input type="text" id="inp-socket-bonus" value="+5 Strength" oninput="updateTooltip()">
+                </div>
+                
+                <div class="form-group"><label>Durability</label><input type="text" id="inp-durability" value="100 / 100" oninput="updateTooltip()"></div>
+            </div>
+
+            <!-- SPELL SPECIFIC -->
+            <div id="fields-spell" class="hidden">
+                <h3>Spell Details</h3>
+                <div class="settings-grid">
+                    <div class="form-group"><label>Rank</label><input type="text" id="inp-rank" value="Rank 1" oninput="updateTooltip()"></div>
+                    <div class="form-group"><label>Cost</label><input type="text" id="inp-cost" value="100 Mana" oninput="updateTooltip()"></div>
+                </div>
+                <div class="settings-grid">
+                    <div class="form-group"><label>Range</label><input type="text" id="inp-range" value="40 yd range" oninput="updateTooltip()"></div>
+                    <div class="form-group"><label>Cast</label><input type="text" id="inp-cast" value="Instant" oninput="updateTooltip()"></div>
+                </div>
+                <div class="form-group"><label>Cooldown</label><input type="text" id="inp-cooldown" value="6 sec cooldown" oninput="updateTooltip()"></div>
+            </div>
+
+            <h3>Effects & Description</h3>
+            <div id="classic-effect-helper" class="classic-helper hidden">
+                <select id="inp-classic-type" style="margin-bottom: 5px;">
+                    <option value="spell">Spell Dmg (Magical)</option>
+                    <option value="heal">Healing Power</option>
+                    <option value="spellcrit">Spell Crit %</option>
+                    <option value="meleecrit">Melee Crit %</option>
+                    <option value="hit">Hit %</option>
+                    <option value="dodge">Dodge %</option>
+                    <option value="parry">Parry %</option>
+                    <option value="block">Block %</option>
+                    <option value="mp5">MP5 (Mana/5s)</option>
+                    <option value="ap">Attack Power</option>
+                </select>
+                <div class="helper-row">
+                    <input type="number" id="inp-classic-val" placeholder="Value" style="flex:1">
+                    <button class="btn-add-line" onclick="addClassicEffect()" style="margin:0; width:60px;">Add</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <select id="inp-effect-trigger" onchange="updateTooltip()"><option value="">No Trigger</option><option value="Equip: " selected>Equip</option><option value="Use: ">Use</option><option value="Chance on hit: ">Chance on hit</option></select>
+            </div>
+            <div class="form-group"><textarea id="inp-effect" oninput="updateTooltip()">Increases the strength of your Guild’s unity by 50.</textarea></div>
+            <div class="form-group"><label>Flavor (Gold)</label><textarea id="inp-flavor" rows="2" oninput="updateTooltip()">"You're the closest to heaven that I'll ever be..."</textarea></div>
+            
+            <div class="form-group"><label style="font-size: 0.8rem; color: #888; margin-bottom: 5px; display: block;">Classes (Optional)</label><div id="class-selector-container" class="class-grid"></div></div>
+
+            <div class="form-group" id="group-req">
+                <div class="label-row"><label>Level Req</label><input type="checkbox" id="chk-req" checked onchange="updateTooltip()"></div>
+                <input type="text" id="inp-req" value="Requires Level 60" oninput="updateTooltip()">
+            </div>
+
+            <div class="action-bar"><button class="btn-download" onclick="downloadTooltip()">Download PNG</button></div>
+            <div style="height: 40px;"></div>
+        </div>
+
+        <!-- RIGHT PANEL: PREVIEW -->
+        <div class="preview-panel">
+            <div id="tooltip-render-area">
+                <div id="tooltip-wrapper" class="tooltip-wrapper border-retail-icon">
+                    <div class="tooltip-icon-container">
+                        <img id="display-icon" src="" class="tooltip-icon">
+                    </div>
+                    <div id="tooltip-box" class="wow-tooltip border-retail font-retail">
+                        <div class="tooltip-header">
+                            <div class="tooltip-text-col">
+                                <div id="display-name" class="tooltip-title q-legendary">The Guild-Forge Gavel</div>
+                                <div id="display-rank" class="tooltip-sub hidden"></div>
+                                <div id="display-ilvl" class="line-gold">Item Level 67</div>
+                                <div id="display-binding" class="line-white">Binds when picked up</div>
+                            </div>
+                        </div>
+                        <div id="section-item-type" class="line-group line-white"><span id="display-slot">One-Hand</span><span id="display-subtype" class="text-right">Mace</span></div>
+                        <div id="display-armor" class="line-group line-white hidden"></div>
+                        <div id="section-weapon" class="line-group line-white">
+                            <div class="stat-line"><span id="display-dmg">33 - 57 Damage</span><span id="display-speed">Speed 2.60</span></div>
+                            <div class="stat-line"><span id="display-dps"></span></div>
+                        </div>
+                        <div id="section-spell-details" class="line-group line-white hidden">
+                            <div class="stat-line"><span id="display-cost"></span><span id="display-range"></span></div>
+                            <div class="stat-line"><span id="display-cast"></span><span id="display-cd"></span></div>
+                        </div>
+                        <div id="display-stats" class="line-group line-white"></div>
+                        <div id="display-sockets" class="line-group"></div>
+                        <div id="display-socket-bonus" class="line-group line-grey hidden"></div>
+                        <div id="display-durability" class="line-group line-white"></div>
+                        <div id="display-classes" class="line-group line-white"></div>
+                        <div id="display-req" class="line-group line-white">Requires Level 60</div>
+                        <div id="display-effect" class="line-group line-green" style="margin-top: 5px; margin-bottom: 10px;"></div>
+                        <div id="display-flavor" class="line-group line-flavor">"You're the closest to heaven that I'll ever be..."</div>
+                    </div>
+                </div>
+            </div>
+            <p style="margin-top:20px; color:#666; font-size:12px;">Preview updates automatically</p>
+        </div>
+    </div>
+    
+    <div id="icon-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Select Icon</h3><span style="cursor:pointer" onclick="closeIconModal()">&times;</span></div>
+            <input type="text" id="icon-search" placeholder="Search..." oninput="filterIcons()">
+            <div id="icon-grid" class="icon-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentBase = 'item', currentEra = 'classic', currentBorder = 'retail', currentFont = 'retail';
+        
+        const ICON_DB = [
+            "inv_mace_01", "inv_mace_02", "inv_sword_39", "inv_sword_04", "inv_sword_11", "inv_sword_27", "inv_axe_04", "inv_axe_09",
+            "inv_staff_13", "inv_staff_30", "inv_spear_05", "inv_weapon_bow_07", "inv_weapon_crossbow_01", "inv_shield_05", "inv_helmet_09",
+            "inv_chest_chain", "inv_jewelry_ring_12", "inv_misc_gem_opal_01", "spell_fire_fireball", "spell_frost_frostbolt02", "spell_holy_holybolt", "spell_shadow_shadowbolt",
+            "spell_nature_healingtouch", "spell_nature_thunderclap", "spell_arcane_blast", "spell_fire_flamebolt",
+            "inv_misc_gem_diamond_01", "inv_misc_bone_01", "inv_misc_book_09",
+            "inv_misc_coin_01", "inv_misc_food_15", "inv_drink_05", "inv_egg_01", "inv_fabric_purplefire_01",
+            "inv_feather_04", "inv_holiday_christmas_present_01", "inv_ingot_01", "inv_kelloggs_zesty_mushrooms",
+            "inv_letter_15", "inv_mask_02", "inv_misc_ammo_arrow_01", "inv_misc_ammo_bullet_01",
+            "inv_misc_bandage_01", "inv_misc_beer_01", "inv_misc_bell_01", "inv_misc_birdbeck_01",
+            "inv_misc_bomb_04", "inv_misc_bone_human_skull_01", "inv_misc_book_11", "inv_misc_candle_01",
+            "inv_misc_drum_02", "inv_misc_dust_02", "inv_misc_eye_01", "inv_misc_fish_04",
+            "inv_misc_flower_02", "inv_misc_flute_01", "inv_misc_fork", "inv_misc_gear_01",
+            "inv_misc_gift_01", "inv_misc_head_dragon_01", "inv_misc_head_murloc_01", "inv_misc_horn_01",
+            "inv_misc_idol_01", "inv_misc_key_01", "inv_misc_lantern_01", "inv_misc_leatherscraps_01",
+            "inv_misc_lockpick_01", "inv_misc_map_01", "inv_misc_monsterscales_01", "inv_misc_monsterstomach_01",
+            "inv_misc_note_01", "inv_misc_orb_01", "inv_misc_organ_01", "inv_misc_pelt_01",
+            "inv_misc_pipe_01", "inv_misc_pocketwatch_01", "inv_misc_punchcard_yellow", "inv_misc_quiver_01",
+            "inv_misc_rune_01", "inv_misc_spyglass_02", "inv_misc_statue_01", "inv_misc_summoningportal_01",
+            "inv_misc_ticket_darkmoon_01", "inv_misc_tournaments_banner_human", "inv_misc_web_01", "inv_misc_wrench_01"
+        ];
+
+        const RETAIL_STATS = ["Agility", "Strength", "Intellect", "Stamina", "Critical Strike", "Haste", "Mastery", "Versatility", "Leech", "Speed", "Avoidance"];
+        const CLASSIC_STATS = ["Strength", "Intellect", "Agility", "Stamina", "Spirit", "Fire Resistance", "Nature Resistance", "Frost Resistance", "Shadow Resistance", "Arcane Resistance"];
+
+        const CLASS_DATA = [
+            { name: "Warrior", color: "#C79C6E", classic: true },
+            { name: "Paladin", color: "#F58CBA", classic: true },
+            { name: "Hunter", color: "#ABD473", classic: true },
+            { name: "Rogue", color: "#FFF569", classic: true },
+            { name: "Priest", color: "#FFFFFF", classic: true },
+            { name: "Death Knight", color: "#C41F3B", classic: false },
+            { name: "Shaman", color: "#0070DE", classic: true },
+            { name: "Mage", color: "#69CCF0", classic: true },
+            { name: "Warlock", color: "#9482C9", classic: true },
+            { name: "Monk", color: "#00FF96", classic: false },
+            { name: "Druid", color: "#FF7D0A", classic: true },
+            { name: "Demon Hunter", color: "#A330C9", classic: false },
+            { name: "Evoker", color: "#33937F", classic: false }
+        ];
+
+        window.onload = () => {
+            document.getElementById('display-icon').src = "https://wow.zamimg.com/images/wow/icons/large/inv_mace_01.jpg";
+            renderStatInputs(); 
+            renderClassInputs(); 
+            handleCategoryChange(); 
+            setEra('classic');
+            setBorder('retail'); 
+            setFont('retail'); 
+
+            const strChk = document.getElementById('chk-stat-Strength');
+            if(strChk) { strChk.checked = true; toggleStatInput('Strength'); document.getElementById('val-stat-Strength').value = 10; }
+            const intChk = document.getElementById('chk-stat-Intellect');
+            if(intChk) { intChk.checked = true; toggleStatInput('Intellect'); document.getElementById('val-stat-Intellect').value = 10; }
+            const fireChk = document.getElementById('chk-stat-FireResistance');
+            if(fireChk) { fireChk.checked = true; toggleStatInput('FireResistance'); document.getElementById('val-stat-FireResistance').value = 15; }
+
+            document.querySelectorAll('.chk-class-item').forEach(chk => {
+                if(chk.value === 'Mage' || chk.value === 'Druid') chk.checked = true;
+            });
+
+            renderIconGrid(ICON_DB);
+            updateTooltip();
+        };
+        
+        function openIconModal() { document.getElementById('icon-modal').classList.remove('hidden'); document.getElementById('icon-search').focus(); }
+        function closeIconModal() { document.getElementById('icon-modal').classList.add('hidden'); }
+        window.onclick = e => { if (e.target == document.getElementById('icon-modal')) closeIconModal(); }
+        
+        function renderIconGrid(icons) {
+            const grid = document.getElementById('icon-grid'); grid.innerHTML = '';
+            icons.forEach(name => {
+                const div = document.createElement('div'); div.className = 'icon-option';
+                div.onclick = () => { document.getElementById('display-icon').src = `https://wow.zamimg.com/images/wow/icons/large/${name}.jpg`; closeIconModal(); };
+                const img = document.createElement('img'); img.src = `https://wow.zamimg.com/images/wow/icons/large/${name}.jpg`;
+                div.appendChild(img); grid.appendChild(div);
+            });
+        }
+        
+        function filterIcons() {
+            const term = document.getElementById('icon-search').value.toLowerCase();
+            const filtered = ICON_DB.filter(n => n.toLowerCase().includes(term));
+            renderIconGrid(filtered);
+        }
+        
+        function handleIconUpload() {
+            const input = document.getElementById('inp-icon-file');
+            if (input.files?.[0]) {
+                const reader = new FileReader();
+                reader.onload = e => document.getElementById('display-icon').src = e.target.result;
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function handleCategoryChange() {
+            const cat = document.getElementById('inp-category').value;
+            ['cat-armor', 'cat-weapon', 'cat-jewelry', 'cat-relic', 'cat-other'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            const selected = document.getElementById('cat-' + cat);
+            if(selected) selected.classList.remove('hidden');
+            updateTooltip();
+        }
+
+        function renderStatInputs() {
+            const container = document.getElementById('stats-container'); container.innerHTML = ''; 
+            const stats = (currentEra === 'classic') ? CLASSIC_STATS : RETAIL_STATS;
+            stats.forEach(stat => {
+                const safe = stat.replace(/\s+/g, '');
+                const row = document.createElement('div'); row.className = 'stat-row';
+                row.innerHTML = `<label class="stat-check"><input type="checkbox" id="chk-stat-${safe}" onchange="toggleStatInput('${safe}')">${stat}</label>
+                    <input type="number" id="val-stat-${safe}" class="stat-input hidden" value="15" oninput="updateTooltip()">`;
+                container.appendChild(row);
+            });
+            document.getElementById('classic-effect-helper').classList.toggle('hidden', currentEra !== 'classic');
+        }
+
+        function renderClassInputs() {
+            const container = document.getElementById('class-selector-container'); container.innerHTML = '';
+            CLASS_DATA.forEach(cls => {
+                if(currentEra === 'classic' && !cls.classic) return;
+                const label = document.createElement('label'); label.className = 'class-checkbox';
+                label.innerHTML = `<input type="checkbox" class="chk-class-item" value="${cls.name}" data-color="${cls.color}" onchange="updateTooltip()"><span style="color:${cls.color}; margin-left:4px;">${cls.name}</span>`;
+                container.appendChild(label);
+            });
+        }
+
+        function toggleStatInput(safe) {
+            const chk = document.getElementById(`chk-stat-${safe}`), inp = document.getElementById(`val-stat-${safe}`);
+            if(!inp) return;
+            inp.classList.toggle('hidden', !chk.checked); if(chk.checked) inp.focus();
+            updateTooltip();
+        }
+
+        function addCustomStat() {
+            const div = document.createElement('div'); div.className = 'custom-stat-row';
+            div.innerHTML = `<input type="text" placeholder="+10" class="custom-val-input" oninput="updateTooltip()"><input type="text" placeholder="Stat" class="custom-name-input" oninput="updateTooltip()"><button class="btn-remove-stat" onclick="this.parentElement.remove(); updateTooltip()">×</button>`;
+            document.getElementById('custom-stats-container').appendChild(div);
+        }
+
+        function setBase(type) { 
+            currentBase = type; highlightGroup('group-base', type); 
+            document.getElementById('fields-item').classList.toggle('hidden', type !== 'item');
+            document.getElementById('fields-spell').classList.toggle('hidden', type === 'item');
+            document.getElementById('group-quality').classList.toggle('hidden', type !== 'item');
+            updateTooltip(); 
+        }
+        function setEra(era) { currentEra = era; highlightGroup('group-era', era === 'retail' ? 'modern' : 'classic'); renderStatInputs(); renderClassInputs(); updateTooltip(); }
+        
+        function setBorder(style) { 
+            currentBorder = style; highlightGroup('group-border', style === 'retail' ? 'modern' : 'classic');
+            const box = document.getElementById('tooltip-box');
+            box.classList.remove('border-classic', 'border-retail'); box.classList.add('border-' + style);
+            const wrapper = document.getElementById('tooltip-wrapper');
+            wrapper.classList.remove('border-classic-icon', 'border-retail-icon'); wrapper.classList.add('border-' + style + '-icon');
+            updateTooltip(); 
+        }
+        function setFont(style) { 
+            currentFont = style; highlightGroup('group-font', style === 'retail' ? 'modern' : 'classic');
+            const box = document.getElementById('tooltip-box');
+            box.classList.remove('font-classic', 'font-retail'); box.classList.add('font-' + style);
+            updateTooltip(); 
+        }
+
+        function highlightGroup(id, text) {
+            document.querySelectorAll(`#${id} .btn-toggle`).forEach(b => b.classList.toggle('active', b.textContent.toLowerCase().includes(text)));
+        }
+
+        function addClassicEffect() {
+            const type = document.getElementById('inp-classic-type').value, val = document.getElementById('inp-classic-val').value;
+            if(!val) return;
+            let text = "";
+            switch(type) {
+                case 'spell': text = `Equip: Increases damage and healing done by magical spells and effects by up to ${val}.`; break;
+                case 'heal': text = `Equip: Increases healing done by spells and effects by up to ${val}.`; break;
+                case 'spellcrit': text = `Equip: Improves your chance to get a critical strike with spells by ${val}%.`; break;
+                case 'meleecrit': text = `Equip: Improves your chance to get a critical strike by ${val}%.`; break;
+                case 'hit': text = `Equip: Improves your chance to hit by ${val}%.`; break;
+                case 'dodge': text = `Equip: Increases your chance to dodge an attack by ${val}%.`; break;
+                case 'parry': text = `Equip: Increases your chance to parry an attack by ${val}%.`; break;
+                case 'block': text = `Equip: Increases your chance to block an attack by ${val}%.`; break;
+                case 'mp5': text = `Equip: Restores ${val} mana per 5 sec.`; break;
+                case 'ap': text = `Equip: +${val} Attack Power.`; break;
+            }
+            const area = document.getElementById('inp-effect'); area.value = (area.value ? area.value + "\n" : "") + text;
+            updateTooltip();
+        }
+
+        function updateTooltip() {
+            const name = document.getElementById('inp-name').value;
+            const quality = document.getElementById('inp-quality').value;
+            const titleEl = document.getElementById('display-name');
+            titleEl.textContent = name;
+            titleEl.className = 'tooltip-title ' + (currentBase === 'item' ? quality : 'line-gold');
+
+            if(currentBase === 'item') {
+                ['section-item-type', 'section-weapon', 'display-stats', 'display-binding'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.classList.remove('hidden');
+                });
+                ['section-spell-details', 'display-rank'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.classList.add('hidden');
+                });
+                
+                const showIlvl = document.getElementById('chk-ilvl').checked;
+                const ilvlEl = document.getElementById('display-ilvl');
+                ilvlEl.classList.toggle('hidden', !showIlvl);
+                ilvlEl.textContent = "Item Level " + document.getElementById('inp-ilvl').value;
+                document.getElementById('display-binding').textContent = document.getElementById('inp-binding').value;
+                
+                const cat = document.getElementById('inp-category').value;
+                let slot = "", sub = "", showArmor = false, showDmg = false;
+
+                if(cat === 'armor') { 
+                    slot = document.getElementById('inp-armor-slot').value; 
+                    sub = document.getElementById('inp-armor-material').value; 
+                    showArmor = true;
+                } else if(cat === 'weapon') { 
+                    sub = document.getElementById('inp-weapon-type').value; 
+                    if (sub.includes('Two') || ["Polearm", "Staff", "Fishing Pole"].includes(sub)) slot = 'Two-Hand';
+                    else if (["Bow", "Crossbow", "Gun", "Wand", "Thrown"].includes(sub)) slot = 'Ranged';
+                    else slot = 'One-Hand';
+                    showDmg = true; 
+                    sub = sub.replace("One-Hand ", "").replace("Two-Hand ", "");
+                } else if(cat === 'jewelry') {
+                    slot = document.getElementById('inp-jewelry-type').value; sub = "";
+                } else if(cat === 'relic') {
+                    slot = "Relic"; sub = document.getElementById('inp-relic-type').value;
+                } else if(cat === 'other') {
+                    const oType = document.getElementById('inp-other-type').value;
+                    if (oType === "Cloak") { slot = "Back"; sub = ""; showArmor = true; }
+                    else if (oType === "Shield") { slot = "Off Hand"; sub = "Shield"; showArmor = true; }
+                    else if (oType === "Held In Off-hand") { slot = "Held In Off-hand"; sub = ""; }
+                    else if (oType === "Shirt") { slot = "Shirt"; sub = ""; }
+                    else if (oType === "Tabard") { slot = "Tabard"; sub = ""; }
+                    else { slot = ""; sub = "Miscellaneous"; }
+                }
+
+                document.getElementById('display-slot').textContent = slot; 
+                document.getElementById('display-subtype').textContent = sub;
+                document.getElementById('group-armor').classList.toggle('hidden', !showArmor);
+                document.getElementById('group-weapon-stats').classList.toggle('hidden', !showDmg);
+                
+                const armorVal = document.getElementById('inp-armor').value, dArmor = document.getElementById('display-armor');
+                if(showArmor && armorVal) { dArmor.classList.remove('hidden'); dArmor.textContent = `${armorVal} Armor`; } else dArmor.classList.add('hidden');
+                
+                const min = parseInt(document.getElementById('inp-dmg-min').value)||0, max = parseInt(document.getElementById('inp-dmg-max').value)||0, spd = parseFloat(document.getElementById('inp-speed').value)||1;
+                if(showDmg && min > 0) {
+                    document.getElementById('section-weapon').classList.remove('hidden');
+                    document.getElementById('display-dmg').textContent = `${min} - ${max} Damage`;
+                    document.getElementById('display-speed').textContent = `Speed ${spd.toFixed(2)}`;
+                    const dpsEl = document.getElementById('display-dps');
+                    const dpsVal = ((min + max) / 2 / spd).toFixed(1);
+                    dpsEl.textContent = `(${dpsVal} damage per second)`;
+                    dpsEl.classList.toggle('hidden', !document.getElementById('chk-show-dps').checked);
+                } else document.getElementById('section-weapon').classList.add('hidden');
+
+                let sHtml = "";
+                const statsArr = (currentEra === 'classic' ? CLASSIC_STATS : RETAIL_STATS);
+                statsArr.forEach(s => {
+                    const safe = s.replace(/\s+/g, ''), chk = document.getElementById(`chk-stat-${safe}`);
+                    if(chk?.checked) sHtml += `<div class="item-property">+${document.getElementById(`val-stat-${safe}`).value} ${s}</div>`;
+                });
+                document.querySelectorAll('.custom-stat-row').forEach(r => {
+                    const v = r.querySelector('.custom-val-input').value, n = r.querySelector('.custom-name-input').value;
+                    if(v && n) sHtml += `<div class="item-property">${v} ${n}</div>`;
+                });
+                document.getElementById('display-stats').innerHTML = sHtml;
+
+                const sDisp = document.getElementById('display-sockets'); sDisp.innerHTML = "";
+                const colors = { Red: "#f00", Yellow: "#ff0", Blue: "#06f", Green: "#0f0", Purple: "#a35", Orange: "#f80", Meta: "#fff" };
+                document.querySelectorAll('.inp-socket').forEach(sel => {
+                    if(sel.value) sDisp.innerHTML += `<div class="socket-row"><div class="socket-box" style="background:${colors[sel.value]}"></div>${sel.value} Socket</div>`;
+                });
+                const bCheck = document.getElementById('chk-socket-bonus').checked, bText = document.getElementById('inp-socket-bonus').value, bDisp = document.getElementById('display-socket-bonus');
+                if(bCheck && bText) { bDisp.innerHTML = `Socket Bonus: ${bText}`; bDisp.classList.remove('hidden'); } else bDisp.classList.add('hidden');
+
+            } else {
+                ['section-item-type', 'section-weapon', 'display-stats', 'display-ilvl', 'display-binding', 'display-armor', 'display-durability'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.classList.add('hidden');
+                });
+                document.getElementById('display-sockets').innerHTML = ""; document.getElementById('display-socket-bonus').classList.add('hidden');
+                document.getElementById('section-spell-details').classList.remove('hidden');
+                const rankEl = document.getElementById('display-rank');
+                if(currentEra === 'classic') { rankEl.classList.remove('hidden'); rankEl.textContent = document.getElementById('inp-rank').value; }
+                else rankEl.classList.add('hidden');
+                document.getElementById('display-cost').textContent = document.getElementById('inp-cost').value;
+                document.getElementById('display-range').textContent = document.getElementById('inp-range').value;
+                document.getElementById('display-cast').textContent = document.getElementById('inp-cast').value;
+                document.getElementById('display-cd').textContent = document.getElementById('inp-cooldown').value;
+            }
+            
+            if(currentBase === 'item') {
+                const dv = document.getElementById('inp-durability').value, de = document.getElementById('display-durability');
+                if(dv) { de.classList.remove('hidden'); de.textContent = `Durability ${dv}`; } else de.classList.add('hidden');
+            }
+
+            const trig = document.getElementById('inp-effect-trigger').value;
+            let body = document.getElementById('inp-effect').value.replace(/\n/g, '<br>');
+            const pref = body.startsWith("Equip:") || body.startsWith("Use:") || body.startsWith("Chance");
+            document.getElementById('display-effect').innerHTML = (trig && !pref ? `<span>${trig}</span>` : "") + body;
+            document.getElementById('display-effect').className = 'line-group ' + (currentBase === 'item' ? 'line-green' : 'line-gold');
+
+            const clDisp = document.getElementById('display-classes'); let sel = [];
+            document.querySelectorAll('.chk-class-item').forEach(c => { if(c.checked) sel.push(`<span style="color:${c.dataset.color}">${c.value}</span>`); });
+            clDisp.innerHTML = sel.length ? 'Classes: ' + sel.join(', ') : ""; clDisp.classList.toggle('hidden', !sel.length);
+            
+            const req = document.getElementById('inp-req').value, rCheck = document.getElementById('chk-req').checked, rEl = document.getElementById('display-req');
+            rEl.textContent = req; rEl.classList.toggle('hidden', !(req && rCheck));
+            
+            const fl = document.getElementById('inp-flavor').value, flEl = document.getElementById('display-flavor');
+            flEl.textContent = fl;
+            flEl.classList.toggle('hidden', !fl);
+        }
+
+        function downloadTooltip() {
+            const node = document.getElementById('tooltip-render-area');
+            html2canvas(node, { backgroundColor: null, scale: 2 }).then(canvas => {
+                const link = document.createElement('a'); link.download = 'wow-tooltip.png'; link.href = canvas.toDataURL(); link.click();
+            });
+        }
+    </script>
+</body>
+</html>
