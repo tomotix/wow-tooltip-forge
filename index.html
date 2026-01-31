@@ -649,7 +649,7 @@
 
         window.onload = () => {
             // Default Mace Icon
-            document.getElementById('display-icon').src = "public/icons/inv_mace_01.jpg";
+            document.getElementById('display-icon').src = "public/icons/inv_mace_01.png";
             
             // Render basic inputs
             renderStatInputs(); 
@@ -688,8 +688,8 @@
             const grid = document.getElementById('icon-grid'); grid.innerHTML = '';
             icons.forEach(name => {
                 const div = document.createElement('div'); div.className = 'icon-option';
-                div.onclick = () => { document.getElementById('display-icon').src = `public/icons/${name}.jpg`; closeIconModal(); };
-                const img = document.createElement('img'); img.src = `public/icons/${name}.jpg`;
+                div.onclick = () => { document.getElementById('display-icon').src = `public/icons/${name}.png`; closeIconModal(); };
+                const img = document.createElement('img'); img.src = `public/icons/${name}.png`;
                 div.appendChild(img); grid.appendChild(div);
             });
         }
