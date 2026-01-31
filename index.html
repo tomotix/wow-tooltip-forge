@@ -456,45 +456,39 @@
     <script>
         let currentBase = 'item', currentEra = 'classic', currentBorder = 'retail', currentFont = 'retail';
         
-        // --- NEW DATA STRUCTURE FOR FOLDERS ---
-        // You must match your actual folder names in 'public/icons/FOLDERNAME'
+        // --- NEW DATA STRUCTURE MATCHING YOUR FOLDERS ---
+        // IMPORTANT: Paste your full list of filenames into these arrays!
         const ICON_LIBRARY = {
-            "Weapons": [
-                "inv_mace_01", "inv_mace_02", "inv_sword_39", "inv_sword_04", "inv_sword_11", "inv_sword_27", 
-                "inv_axe_04", "inv_axe_09", "inv_staff_13", "inv_staff_30", "inv_spear_05", 
-                "inv_weapon_bow_07", "inv_weapon_crossbow_01"
+            "Abilities": [
+                "spell_nature_thunderclap", "spell_nature_healingtouch"
             ],
             "Armor": [
                 "inv_shield_05", "inv_helmet_09", "inv_chest_chain", "inv_misc_gem_diamond_01"
             ],
-            "Spells": [
-                "spell_fire_fireball", "spell_frost_frostbolt02", "spell_holy_holybolt", "spell_shadow_shadowbolt",
-                "spell_nature_healingtouch", "spell_nature_thunderclap", "spell_arcane_blast", "spell_fire_flamebolt"
-            ],
-            "TradeGoods": [
-                "inv_misc_gem_opal_01", "inv_misc_bone_01", "inv_misc_book_09", "inv_ingot_01", 
-                "inv_kelloggs_zesty_mushrooms", "inv_misc_dust_02", "inv_misc_leatherscraps_01", 
-                "inv_misc_monsterscales_01", "inv_misc_web_01"
-            ],
-            "Consumables": [
+            "Items": [
                 "inv_misc_food_15", "inv_drink_05", "inv_egg_01", "inv_misc_beer_01", 
                 "inv_misc_bandage_01"
             ],
             "Misc": [
                 "inv_misc_coin_01", "inv_fabric_purplefire_01", "inv_feather_04", 
-                "inv_holiday_christmas_present_01", "inv_letter_15", "inv_mask_02", 
-                "inv_misc_ammo_arrow_01", "inv_misc_ammo_bullet_01", "inv_misc_bell_01", 
-                "inv_misc_birdbeck_01", "inv_misc_bomb_04", "inv_misc_bone_human_skull_01", 
-                "inv_misc_book_11", "inv_misc_candle_01", "inv_misc_drum_02", 
-                "inv_misc_eye_01", "inv_misc_fish_04", "inv_misc_flower_02", "inv_misc_flute_01", 
-                "inv_misc_fork", "inv_misc_gear_01", "inv_misc_gift_01", "inv_misc_head_dragon_01", 
-                "inv_misc_head_murloc_01", "inv_misc_horn_01", "inv_misc_idol_01", "inv_misc_key_01", 
-                "inv_misc_lantern_01", "inv_misc_lockpick_01", "inv_misc_map_01", "inv_misc_monsterstomach_01", 
-                "inv_misc_note_01", "inv_misc_orb_01", "inv_misc_organ_01", "inv_misc_pelt_01", 
-                "inv_misc_pipe_01", "inv_misc_pocketwatch_01", "inv_misc_punchcard_yellow", 
-                "inv_misc_quiver_01", "inv_misc_rune_01", "inv_misc_spyglass_02", "inv_misc_statue_01", 
-                "inv_misc_summoningportal_01", "inv_misc_ticket_darkmoon_01", 
-                "inv_misc_tournaments_banner_human", "inv_misc_wrench_01"
+                "inv_holiday_christmas_present_01", "inv_letter_15", "inv_mask_02", "inv_misc_candle_01"
+            ],
+            "Places": [
+                // Paste places icons here
+            ],
+            "Spells": [
+                "spell_fire_fireball", "spell_frost_frostbolt02", "spell_holy_holybolt", "spell_shadow_shadowbolt",
+                "spell_arcane_blast", "spell_fire_flamebolt"
+            ],
+            "Trade": [
+                "inv_misc_gem_opal_01", "inv_misc_bone_01", "inv_misc_book_09", "inv_ingot_01", 
+                "inv_kelloggs_zesty_mushrooms", "inv_misc_dust_02", "inv_misc_leatherscraps_01", 
+                "inv_misc_monsterscales_01", "inv_misc_web_01"
+            ],
+            "Weapons": [
+                "inv_mace_01", "inv_mace_02", "inv_sword_39", "inv_sword_04", "inv_sword_11", "inv_sword_27", 
+                "inv_axe_04", "inv_axe_09", "inv_staff_13", "inv_staff_30", "inv_spear_05", 
+                "inv_weapon_bow_07", "inv_weapon_crossbow_01"
             ]
         };
 
@@ -520,8 +514,7 @@
         ];
 
         window.onload = () => {
-            // Updated Path for default icon. 
-            // NOTE: Make sure you actually have this file in public/icons/Weapons/inv_mace_01.png
+            // Default Mace Icon (Path Updated to 'Weapons')
             document.getElementById('display-icon').src = "public/icons/Weapons/inv_mace_01.png";
             
             renderStatInputs(); 
@@ -543,7 +536,6 @@
                 if(chk.value === 'Mage' || chk.value === 'Druid') chk.checked = true;
             });
 
-            // Initial Library Render (Folders)
             renderLibrary();
             updateTooltip();
         };
@@ -552,7 +544,6 @@
         function openIconModal() { 
             document.getElementById('icon-modal').classList.remove('hidden'); 
             document.getElementById('icon-search').focus(); 
-            // Reset to folder view on open
             currentFolder = null;
             document.getElementById('icon-search').value = "";
             renderLibrary();
@@ -576,7 +567,7 @@
             const backBtn = document.getElementById('btn-back');
             const term = document.getElementById('icon-search').value.toLowerCase();
 
-            // VIEW 1: FOLDERS (No folder selected)
+            // VIEW 1: FOLDERS
             if (!currentFolder && !term) {
                 backBtn.classList.add('hidden');
                 
@@ -590,20 +581,17 @@
                 return;
             }
 
-            // VIEW 2: ICONS (Folder selected OR Searching)
+            // VIEW 2: ICONS
             backBtn.classList.remove('hidden');
 
             let iconsToShow = [];
             
-            // If searching, search EVERYTHING
             if (term) {
                 Object.keys(ICON_LIBRARY).forEach(folder => {
                     const matches = ICON_LIBRARY[folder].filter(icon => icon.toLowerCase().includes(term));
-                    // Map them to keep track of their folder
                     matches.forEach(m => iconsToShow.push({ name: m, folder: folder }));
                 });
             } else {
-                // Just show current folder contents
                 if (ICON_LIBRARY[currentFolder]) {
                     iconsToShow = ICON_LIBRARY[currentFolder].map(i => ({ name: i, folder: currentFolder }));
                 }
@@ -616,8 +604,7 @@
 
             iconsToShow.forEach(item => {
                 const div = document.createElement('div'); div.className = 'icon-option';
-                // IMPORTANT: PATH UPDATE
-                // public / icons / FOLDER / name .png
+                // Path structure: public/icons/FOLDER/name.png
                 const path = `public/icons/${item.folder}/${item.name}.png`;
                 
                 div.onclick = () => { 
@@ -627,7 +614,7 @@
                 
                 const img = document.createElement('img'); 
                 img.src = path;
-                img.loading = "lazy"; // Performance boost for many icons
+                img.loading = "lazy";
                 div.appendChild(img); grid.appendChild(div);
             });
         }
