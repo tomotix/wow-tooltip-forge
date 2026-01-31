@@ -4,27 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WoW Tooltip Creator</title>
-    <!-- HTML2Canvas for downloading images -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         /* --- CORE VARIABLES --- */
         :root {
             --bg-color: #121212;
-            --panel-bg: #1b1b1b; /* Sidebar background */
+            --panel-bg: #1b1b1b;
             --text-color: #e0e0e0;
-            --accent-color: #e66306; /* Accent color */
+            --accent-color: #e66306;
             --border-color: #333;
-            
             /* WoW Quality Colors */
-            --q-poor: #9d9d9d;
-            --q-common: #ffffff;
-            --q-uncommon: #1eff00;
-            --q-rare: #0070dd;
-            --q-epic: #a335ee;
-            --q-legendary: #ff8000;
-            --q-artifact: #e6cc80;
-            --q-heirloom: #00ccff;
-
+            --q-poor: #9d9d9d; --q-common: #ffffff; --q-uncommon: #1eff00;
+            --q-rare: #0070dd; --q-epic: #a335ee; --q-legendary: #ff8000;
+            --q-artifact: #e6cc80; --q-heirloom: #00ccff;
             /* Tooltip Specifics */
             --classic-bg: rgba(5, 5, 5, 0.9);
             --retail-bg: rgba(12, 12, 20, 0.95);
@@ -41,260 +33,114 @@
             overflow: hidden;
         }
 
-        /* --- CUSTOM SCROLLBAR --- */
-        .controls-panel::-webkit-scrollbar {
-            width: 10px;
-        }
-        .controls-panel::-webkit-scrollbar-track {
-            background: #1b1b1b;
-        }
-        .controls-panel::-webkit-scrollbar-thumb {
-            background: #e66306;
-            border-radius: 5px;
-        }
-        /* Firefox support */
-        .controls-panel {
-            scrollbar-width: thin;
-            scrollbar-color: #e66306 #1b1b1b;
-        }
+        /* --- SCROLLBAR --- */
+        .controls-panel::-webkit-scrollbar { width: 10px; }
+        .controls-panel::-webkit-scrollbar-track { background: #1b1b1b; }
+        .controls-panel::-webkit-scrollbar-thumb { background: #e66306; border-radius: 5px; }
+        .controls-panel { scrollbar-width: thin; scrollbar-color: #e66306 #1b1b1b; }
 
         /* --- LAYOUT --- */
-        .container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            flex-direction: row; 
-        }
+        .container { display: flex; width: 100%; height: 100%; flex-direction: row; }
+        .controls-panel { width: 450px; background-color: var(--panel-bg); border-right: 1px solid var(--border-color); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
+        .preview-panel { flex: 1; background-color: #111; background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/World_of_Warcraft_Logo.svg/1200px-World_of_Warcraft_Logo.svg.png'); background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
 
-        .controls-panel {
-            width: 450px;
-            background-color: var(--panel-bg);
-            border-right: 1px solid var(--border-color);
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            flex-shrink: 0;
-        }
-
-        .preview-panel {
-            flex: 1;
-            background-image: 
-                linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
-                url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/World_of_Warcraft_Logo.svg/1200px-World_of_Warcraft_Logo.svg.png');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            position: relative;
-            /* Updated Canvas Background - Solid #111111, no dots */
-            background-color: #111111;
-        }
-        
         @media (max-width: 900px) {
-            .container {
-                flex-direction: column; /* Stack vertically */
-            }
-
-            .preview-panel {
-                order: 1; /* Show Preview FIRST */
-                height: 50vh; /* Takes top 50% of screen */
-                flex: none; /* Disable flex-grow */
-                border-bottom: 1px solid var(--border-color);
-                padding: 40px 20px; /* Added breathing room at top */
-                overflow: hidden;
-            }
-
-            .controls-panel {
-                order: 2; /* Show Controls SECOND */
-                width: 100%; /* Full width */
-                height: 50vh; /* Takes bottom 50% of screen */
-                border-right: none;
-                overflow-y: auto;
-                padding: 20px 20px 60px 20px; /* Added breathing room at bottom for button */
-            }
-            
-            /* Scale down tooltip slightly on small screens if needed */
-            #tooltip-render-area {
-                transform-origin: center center;
-                transform: scale(0.75);
-            }
-
-            /* Hide copyright text on mobile */
-            .copyright-text {
-                display: none !important;
-            }
+            .container { flex-direction: column; }
+            .preview-panel { order: 1; height: 50vh; flex: none; border-bottom: 1px solid var(--border-color); padding: 40px 20px; overflow: hidden; }
+            .controls-panel { order: 2; width: 100%; height: 50vh; border-right: none; padding: 20px 20px 60px 20px; }
+            #tooltip-render-area { transform: scale(0.75); }
+            .copyright-text { display: none !important; }
         }
 
-        /* --- COMPACT UI --- */
-        .settings-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .settings-grid.triple {
-             grid-template-columns: 1.5fr 1fr;
-        }
-
+        /* --- UI COMPONENTS --- */
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .settings-grid.triple { grid-template-columns: 1.5fr 1fr; }
         h2 { font-size: 1.2rem; margin-bottom: 5px; color: var(--accent-color); }
         h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-top: 10px; margin-bottom: 6px; border-bottom: 1px solid #333; padding-bottom: 3px; }
-
-        .btn-group {
-            display: flex;
-            background: #000;
-            border-radius: 6px;
-            padding: 3px;
-            gap: 3px;
-        }
-        .btn-toggle {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #777;
-            padding: 6px 4px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
+        .btn-group { display: flex; background: #000; border-radius: 6px; padding: 3px; gap: 3px; }
+        .btn-toggle { flex: 1; background: transparent; border: none; color: #777; padding: 6px 4px; cursor: pointer; border-radius: 4px; font-weight: 600; font-size: 0.75rem; transition: all 0.2s; white-space: nowrap; }
         .btn-toggle:hover { color: #fff; background: #222; }
-        .btn-toggle.active {
-            background: var(--accent-color);
-            color: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
-        }
-
+        .btn-toggle.active { background: var(--accent-color); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
         .form-group { margin-bottom: 8px; }
         .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 3px; }
-        
         input[type="checkbox"] { width: auto !important; cursor: pointer; accent-color: var(--accent-color); margin-right: 8px; }
-        input[type="text"], input[type="number"], select, textarea {
-            width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 6px 8px; border-radius: 4px; font-size: 0.85rem;
-        }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; background: #111; border: 1px solid #333; color: #fff; padding: 6px 8px; border-radius: 4px; font-size: 0.85rem; }
         select#inp-quality option { background: #111; font-weight: bold; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); }
         textarea { resize: vertical; min-height: 60px; font-family: inherit; }
-
         .hidden { display: none !important; }
 
-        /* Quality Color Classes */
-        .q-poor { color: var(--q-poor) !important; }
-        .q-common { color: var(--q-common) !important; }
-        .q-uncommon { color: var(--q-uncommon) !important; }
-        .q-rare { color: var(--q-rare) !important; }
-        .q-epic { color: var(--q-epic) !important; }
-        .q-legendary { color: var(--q-legendary) !important; }
-        .q-artifact { color: var(--q-artifact) !important; }
-        .q-heirloom { color: var(--q-heirloom) !important; }
-
-        /* Stats Builder */
+        /* --- COLORS & STATS --- */
+        .q-poor { color: var(--q-poor) !important; } .q-common { color: var(--q-common) !important; } .q-uncommon { color: var(--q-uncommon) !important; }
+        .q-rare { color: var(--q-rare) !important; } .q-epic { color: var(--q-epic) !important; } .q-legendary { color: var(--q-legendary) !important; }
+        .q-artifact { color: var(--q-artifact) !important; } .q-heirloom { color: var(--q-heirloom) !important; }
         .stats-builder { background: #111; border: 1px solid #333; border-radius: 4px; padding: 8px; }
         .stat-row { display: flex; align-items: center; margin-bottom: 6px; justify-content: space-between; }
         .stat-check { display: flex; align-items: center; cursor: pointer; color: #ccc; font-size: 0.85rem; flex: 1; }
         .stat-input { width: 65px !important; padding: 4px 6px !important; height: 26px; font-size: 0.8rem !important; }
-
-        /* Class Grid */
         .class-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; background: #111; border: 1px solid #333; padding: 8px; border-radius: 4px; }
         .class-checkbox { display: flex; align-items: center; color: #ccc; font-size: 0.75rem; cursor: pointer; }
-
         .btn-add-stat, .btn-add-line { background: #333; color: #ccc; border: 1px dashed #555; width: 100%; padding: 6px; margin-top: 5px; cursor: pointer; font-size: 0.8rem; border-radius: 4px; }
         .custom-stat-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; }
         .custom-val-input { width: 60px !important; }
 
-        /* Icon Picker */
+        /* --- ICON PICKER & MODAL --- */
         .icon-picker-row { display: flex; gap: 8px; }
         .btn-icon-action { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: #e0e0e0; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
-
-        /* Modal */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal-content { background: #1a1a1a; border: 1px solid #444; width: 90%; max-width: 600px; height: 80%; border-radius: 8px; display: flex; flex-direction: column; padding: 20px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         
-        /* Fixed Library Display - 1:1 Squares */
-        .icon-grid { 
-            flex: 1; 
-            overflow-y: auto; 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); 
-            gap: 10px; 
-            padding: 10px; 
-            background: #111; 
-            border: 1px solid #333; 
-        }
-        .icon-option { 
-            width: 100%; 
-            position: relative; 
-            background: #000; 
-            border: 1px solid #333; 
-            cursor: pointer; 
-            aspect-ratio: 1 / 1; /* Enforce 1:1 ratio */
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .icon-option img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
-        .icon-option:hover {
-            border-color: var(--accent-color);
-            z-index: 1;
-        }
+        .modal-toolbar { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn-back { background: #333; border: 1px solid #555; color: #fff; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-back:hover { background: #444; }
+
+        .icon-grid { flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px; padding: 10px; background: #111; border: 1px solid #333; }
+        
+        /* Icon Items */
+        .icon-option { width: 100%; position: relative; background: #000; border: 1px solid #333; cursor: pointer; aspect-ratio: 1 / 1; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .icon-option img { width: 100%; height: 100%; object-fit: cover; }
+        .icon-option:hover { border-color: var(--accent-color); z-index: 1; }
+
+        /* Folder Items */
+        .folder-option { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #222; border: 1px solid #444; aspect-ratio: 1 / 1; cursor: pointer; color: #ccc; font-size: 0.8rem; text-align: center; padding: 5px; }
+        .folder-option:hover { background: #333; color: #fff; border-color: var(--accent-color); }
+        .folder-icon { font-size: 24px; margin-bottom: 5px; color: #ffd100; }
 
         .btn-download { background: var(--accent-color); color: #fff; border: none; padding: 10px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 4px; }
 
-        /* --- THE TOOLTIP --- */
+        /* --- TOOLTIP RENDER --- */
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
-
         #tooltip-render-area { position: relative; padding: 20px; display: inline-block; }
         .tooltip-wrapper { display: flex; align-items: flex-start; gap: 5px; }
         .tooltip-icon-container { width: 56px; height: 56px; flex-shrink: 0; position: relative; }
         .tooltip-icon { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
-
         .wow-tooltip { width: 350px; min-height: 100px; padding: 12px; border-radius: 4px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.8); cursor: default; user-select: none; }
         
-        /* Font Splitting */
+        /* Styles */
         .font-classic { font-family: 'Merriweather', serif; }
         .font-classic .tooltip-title { font-weight: 700; text-shadow: 1px 1px 0 #000; letter-spacing: 0.5px; }
         .font-retail { font-family: 'Open Sans', sans-serif; }
         .font-retail .tooltip-title { letter-spacing: 0.5px; font-weight: 600; text-shadow: 1px 1px 2px #000; }
-
-        /* Border Splitting */
         .border-classic { background-color: var(--classic-bg); border: 2px solid #a8a8a8; border-color: #cfcfcf #505050 #505050 #cfcfcf; }
         .border-retail { background-color: var(--retail-bg); border: 1px solid #555; box-shadow: 0 0 0 1px #000, 0 0 10px rgba(0,0,0,0.5); }
-        
-        /* Icon styles tied to Border selection */
         .border-classic-icon .tooltip-icon { border: 1px solid #aaa; border-radius: 0; }
         .border-retail-icon .tooltip-icon { border: 1px solid #333; }
 
+        /* Tooltip Content */
         .tooltip-header { display: flex; gap: 12px; margin-bottom: 2px; }
         .tooltip-text-col { display: flex; flex-direction: column; justify-content: center; width: 100%; }
         .tooltip-title { font-size: 18px; margin-bottom: 2px; line-height: 1.2; }
         .tooltip-sub { font-size: 13px; color: #fff; margin-bottom: 4px; }
         .text-right { float: right; }
         .line-group { font-size: 13px; color: #ffd100; line-height: 1.5; }
-        .line-white { color: #fff; }
-        .line-green { color: #1eff00; }
-        .line-gold { color: #ffd100; }
+        .line-white { color: #fff; } .line-green { color: #1eff00; } .line-gold { color: #ffd100; } .line-grey { color: #9d9d9d; }
         .line-flavor { color: #ffd100; font-style: italic; margin-top: 10px; opacity: 0.9; }
-        .line-grey { color: #9d9d9d; }
         .stat-line { display: flex; justify-content: space-between; color: #fff; font-size: 13px; }
         .item-property { display: block; }
-
-        /* Socket Styles */
         .socket-row { display: flex; align-items: center; gap: 6px; color: #9d9d9d; font-size: 13px; margin-bottom: 2px; }
         .socket-box { width: 14px; height: 14px; border: 1px solid #333; flex-shrink: 0; }
-
-        /* Helper Classes */
         .classic-helper { background: #191919; border: 1px solid #333; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
         .helper-row { display: flex; gap: 5px; margin-top: 5px; }
 
@@ -303,7 +149,6 @@
 <body>
 
     <div class="container">
-        <!-- CONTROLS -->
         <div class="controls-panel">
             <h2>WoW Tooltip Creator</h2>
             
@@ -372,7 +217,6 @@
                 </select>
             </div>
 
-            <!-- ITEM SPECIFIC -->
             <div id="fields-item">
                 <div class="settings-grid">
                     <div class="form-group">
@@ -501,7 +345,6 @@
                 <div class="form-group"><label>Durability</label><input type="text" id="inp-durability" value="100 / 100" oninput="updateTooltip()"></div>
             </div>
 
-            <!-- SPELL SPECIFIC -->
             <div id="fields-spell" class="hidden">
                 <h3>Spell Details</h3>
                 <div class="settings-grid">
@@ -552,7 +395,6 @@
             <div style="height: 40px;"></div>
         </div>
 
-        <!-- RIGHT PANEL: PREVIEW -->
         <div class="preview-panel">
             <div id="tooltip-render-area">
                 <div id="tooltip-wrapper" class="tooltip-wrapper border-retail-icon">
@@ -597,8 +439,16 @@
     
     <div id="icon-modal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header"><h3>Select Icon</h3><span style="cursor:pointer" onclick="closeIconModal()">&times;</span></div>
-            <input type="text" id="icon-search" placeholder="Search..." oninput="filterIcons()">
+            <div class="modal-header">
+                <h3>Select Icon</h3>
+                <span style="cursor:pointer; font-size:1.2rem;" onclick="closeIconModal()">&times;</span>
+            </div>
+            
+            <div class="modal-toolbar">
+                <button id="btn-back" class="btn-back hidden" onclick="goBack()">« Back</button>
+                <input type="text" id="icon-search" placeholder="Search..." oninput="handleSearch()">
+            </div>
+
             <div id="icon-grid" class="icon-grid"></div>
         </div>
     </div>
@@ -606,27 +456,49 @@
     <script>
         let currentBase = 'item', currentEra = 'classic', currentBorder = 'retail', currentFont = 'retail';
         
-        const ICON_DB = [
-            "inv_mace_01", "inv_mace_02", "inv_sword_39", "inv_sword_04", "inv_sword_11", "inv_sword_27", "inv_axe_04", "inv_axe_09",
-            "inv_staff_13", "inv_staff_30", "inv_spear_05", "inv_weapon_bow_07", "inv_weapon_crossbow_01", "inv_shield_05", "inv_helmet_09",
-            "inv_chest_chain", "inv_jewelry_ring_12", "inv_misc_gem_opal_01", "spell_fire_fireball", "spell_frost_frostbolt02", "spell_holy_holybolt", "spell_shadow_shadowbolt",
-            "spell_nature_healingtouch", "spell_nature_thunderclap", "spell_arcane_blast", "spell_fire_flamebolt",
-            "inv_misc_gem_diamond_01", "inv_misc_bone_01", "inv_misc_book_09",
-            "inv_misc_coin_01", "inv_misc_food_15", "inv_drink_05", "inv_egg_01", "inv_fabric_purplefire_01",
-            "inv_feather_04", "inv_holiday_christmas_present_01", "inv_ingot_01", "inv_kelloggs_zesty_mushrooms",
-            "inv_letter_15", "inv_mask_02", "inv_misc_ammo_arrow_01", "inv_misc_ammo_bullet_01",
-            "inv_misc_bandage_01", "inv_misc_beer_01", "inv_misc_bell_01", "inv_misc_birdbeck_01",
-            "inv_misc_bomb_04", "inv_misc_bone_human_skull_01", "inv_misc_book_11", "inv_misc_candle_01",
-            "inv_misc_drum_02", "inv_misc_dust_02", "inv_misc_eye_01", "inv_misc_fish_04",
-            "inv_misc_flower_02", "inv_misc_flute_01", "inv_misc_fork", "inv_misc_gear_01",
-            "inv_misc_gift_01", "inv_misc_head_dragon_01", "inv_misc_head_murloc_01", "inv_misc_horn_01",
-            "inv_misc_idol_01", "inv_misc_key_01", "inv_misc_lantern_01", "inv_misc_leatherscraps_01",
-            "inv_misc_lockpick_01", "inv_misc_map_01", "inv_misc_monsterscales_01", "inv_misc_monsterstomach_01",
-            "inv_misc_note_01", "inv_misc_orb_01", "inv_misc_organ_01", "inv_misc_pelt_01",
-            "inv_misc_pipe_01", "inv_misc_pocketwatch_01", "inv_misc_punchcard_yellow", "inv_misc_quiver_01",
-            "inv_misc_rune_01", "inv_misc_spyglass_02", "inv_misc_statue_01", "inv_misc_summoningportal_01",
-            "inv_misc_ticket_darkmoon_01", "inv_misc_tournaments_banner_human", "inv_misc_web_01", "inv_misc_wrench_01"
-        ];
+        // --- NEW DATA STRUCTURE FOR FOLDERS ---
+        // You must match your actual folder names in 'public/icons/FOLDERNAME'
+        const ICON_LIBRARY = {
+            "Weapons": [
+                "inv_mace_01", "inv_mace_02", "inv_sword_39", "inv_sword_04", "inv_sword_11", "inv_sword_27", 
+                "inv_axe_04", "inv_axe_09", "inv_staff_13", "inv_staff_30", "inv_spear_05", 
+                "inv_weapon_bow_07", "inv_weapon_crossbow_01"
+            ],
+            "Armor": [
+                "inv_shield_05", "inv_helmet_09", "inv_chest_chain", "inv_misc_gem_diamond_01"
+            ],
+            "Spells": [
+                "spell_fire_fireball", "spell_frost_frostbolt02", "spell_holy_holybolt", "spell_shadow_shadowbolt",
+                "spell_nature_healingtouch", "spell_nature_thunderclap", "spell_arcane_blast", "spell_fire_flamebolt"
+            ],
+            "TradeGoods": [
+                "inv_misc_gem_opal_01", "inv_misc_bone_01", "inv_misc_book_09", "inv_ingot_01", 
+                "inv_kelloggs_zesty_mushrooms", "inv_misc_dust_02", "inv_misc_leatherscraps_01", 
+                "inv_misc_monsterscales_01", "inv_misc_web_01"
+            ],
+            "Consumables": [
+                "inv_misc_food_15", "inv_drink_05", "inv_egg_01", "inv_misc_beer_01", 
+                "inv_misc_bandage_01"
+            ],
+            "Misc": [
+                "inv_misc_coin_01", "inv_fabric_purplefire_01", "inv_feather_04", 
+                "inv_holiday_christmas_present_01", "inv_letter_15", "inv_mask_02", 
+                "inv_misc_ammo_arrow_01", "inv_misc_ammo_bullet_01", "inv_misc_bell_01", 
+                "inv_misc_birdbeck_01", "inv_misc_bomb_04", "inv_misc_bone_human_skull_01", 
+                "inv_misc_book_11", "inv_misc_candle_01", "inv_misc_drum_02", 
+                "inv_misc_eye_01", "inv_misc_fish_04", "inv_misc_flower_02", "inv_misc_flute_01", 
+                "inv_misc_fork", "inv_misc_gear_01", "inv_misc_gift_01", "inv_misc_head_dragon_01", 
+                "inv_misc_head_murloc_01", "inv_misc_horn_01", "inv_misc_idol_01", "inv_misc_key_01", 
+                "inv_misc_lantern_01", "inv_misc_lockpick_01", "inv_misc_map_01", "inv_misc_monsterstomach_01", 
+                "inv_misc_note_01", "inv_misc_orb_01", "inv_misc_organ_01", "inv_misc_pelt_01", 
+                "inv_misc_pipe_01", "inv_misc_pocketwatch_01", "inv_misc_punchcard_yellow", 
+                "inv_misc_quiver_01", "inv_misc_rune_01", "inv_misc_spyglass_02", "inv_misc_statue_01", 
+                "inv_misc_summoningportal_01", "inv_misc_ticket_darkmoon_01", 
+                "inv_misc_tournaments_banner_human", "inv_misc_wrench_01"
+            ]
+        };
+
+        let currentFolder = null; // null means we are at root (viewing folders)
 
         const RETAIL_STATS = ["Agility", "Strength", "Intellect", "Stamina", "Critical Strike", "Haste", "Mastery", "Versatility", "Leech", "Speed", "Avoidance"];
         const CLASSIC_STATS = ["Strength", "Intellect", "Agility", "Stamina", "Spirit", "Fire Resistance", "Nature Resistance", "Frost Resistance", "Shadow Resistance", "Arcane Resistance"];
@@ -648,56 +520,116 @@
         ];
 
         window.onload = () => {
-            // Default Mace Icon
-            document.getElementById('display-icon').src = "public/icons/inv_mace_01.png";
+            // Updated Path for default icon. 
+            // NOTE: Make sure you actually have this file in public/icons/Weapons/inv_mace_01.png
+            document.getElementById('display-icon').src = "public/icons/Weapons/inv_mace_01.png";
             
-            // Render basic inputs
             renderStatInputs(); 
             renderClassInputs(); 
             handleCategoryChange(); 
-            
-            // Set Default States from user query
             setEra('classic');
             setBorder('retail'); 
             setFont('retail'); 
 
-            // Programmatically set default stat values
+            // Defaults
             const strChk = document.getElementById('chk-stat-Strength');
             if(strChk) { strChk.checked = true; toggleStatInput('Strength'); document.getElementById('val-stat-Strength').value = 10; }
-            
             const intChk = document.getElementById('chk-stat-Intellect');
             if(intChk) { intChk.checked = true; toggleStatInput('Intellect'); document.getElementById('val-stat-Intellect').value = 10; }
-
             const fireChk = document.getElementById('chk-stat-FireResistance');
             if(fireChk) { fireChk.checked = true; toggleStatInput('FireResistance'); document.getElementById('val-stat-FireResistance').value = 15; }
 
-            // Programmatically set default classes
             document.querySelectorAll('.chk-class-item').forEach(chk => {
                 if(chk.value === 'Mage' || chk.value === 'Druid') chk.checked = true;
             });
 
-            renderIconGrid(ICON_DB);
+            // Initial Library Render (Folders)
+            renderLibrary();
             updateTooltip();
         };
         
-        function openIconModal() { document.getElementById('icon-modal').classList.remove('hidden'); document.getElementById('icon-search').focus(); }
+        // --- MODAL LOGIC ---
+        function openIconModal() { 
+            document.getElementById('icon-modal').classList.remove('hidden'); 
+            document.getElementById('icon-search').focus(); 
+            // Reset to folder view on open
+            currentFolder = null;
+            document.getElementById('icon-search').value = "";
+            renderLibrary();
+        }
         function closeIconModal() { document.getElementById('icon-modal').classList.add('hidden'); }
         window.onclick = e => { if (e.target == document.getElementById('icon-modal')) closeIconModal(); }
-        
-        function renderIconGrid(icons) {
-            const grid = document.getElementById('icon-grid'); grid.innerHTML = '';
-            icons.forEach(name => {
+
+        function goBack() {
+            currentFolder = null;
+            document.getElementById('icon-search').value = "";
+            renderLibrary();
+        }
+
+        function handleSearch() {
+            renderLibrary();
+        }
+
+        function renderLibrary() {
+            const grid = document.getElementById('icon-grid'); 
+            grid.innerHTML = '';
+            const backBtn = document.getElementById('btn-back');
+            const term = document.getElementById('icon-search').value.toLowerCase();
+
+            // VIEW 1: FOLDERS (No folder selected)
+            if (!currentFolder && !term) {
+                backBtn.classList.add('hidden');
+                
+                Object.keys(ICON_LIBRARY).forEach(folderName => {
+                    const div = document.createElement('div'); 
+                    div.className = 'folder-option';
+                    div.innerHTML = `<div class="folder-icon">📁</div><div>${folderName}</div>`;
+                    div.onclick = () => { currentFolder = folderName; renderLibrary(); };
+                    grid.appendChild(div);
+                });
+                return;
+            }
+
+            // VIEW 2: ICONS (Folder selected OR Searching)
+            backBtn.classList.remove('hidden');
+
+            let iconsToShow = [];
+            
+            // If searching, search EVERYTHING
+            if (term) {
+                Object.keys(ICON_LIBRARY).forEach(folder => {
+                    const matches = ICON_LIBRARY[folder].filter(icon => icon.toLowerCase().includes(term));
+                    // Map them to keep track of their folder
+                    matches.forEach(m => iconsToShow.push({ name: m, folder: folder }));
+                });
+            } else {
+                // Just show current folder contents
+                if (ICON_LIBRARY[currentFolder]) {
+                    iconsToShow = ICON_LIBRARY[currentFolder].map(i => ({ name: i, folder: currentFolder }));
+                }
+            }
+
+            if(iconsToShow.length === 0) {
+                grid.innerHTML = '<div style="color:#666; padding:20px;">No icons found.</div>';
+                return;
+            }
+
+            iconsToShow.forEach(item => {
                 const div = document.createElement('div'); div.className = 'icon-option';
-                div.onclick = () => { document.getElementById('display-icon').src = `public/icons/${name}.png`; closeIconModal(); };
-                const img = document.createElement('img'); img.src = `public/icons/${name}.png`;
+                // IMPORTANT: PATH UPDATE
+                // public / icons / FOLDER / name .png
+                const path = `public/icons/${item.folder}/${item.name}.png`;
+                
+                div.onclick = () => { 
+                    document.getElementById('display-icon').src = path; 
+                    closeIconModal(); 
+                };
+                
+                const img = document.createElement('img'); 
+                img.src = path;
+                img.loading = "lazy"; // Performance boost for many icons
                 div.appendChild(img); grid.appendChild(div);
             });
-        }
-        
-        function filterIcons() {
-            const term = document.getElementById('icon-search').value.toLowerCase();
-            const filtered = ICON_DB.filter(n => n.toLowerCase().includes(term));
-            renderIconGrid(filtered);
         }
         
         function handleIconUpload() {
