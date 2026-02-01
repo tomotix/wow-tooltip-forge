@@ -1,9 +1,0 @@
-list.txt
-Socket-Blue.png
-Socket-Cogwheel.png
-Socket-Domination.png
-Socket-Hydraulic.png
-Socket-Meta.png
-Socket-Prismatic.png
-Socket-Red.png
-Socket-Yellow.png
