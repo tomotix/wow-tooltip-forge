@@ -171,7 +171,7 @@
 
         .btn-nav:hover {
             background: var(--accent-color);
-            border: 1px solid var(--accent-color);;
+            border: 1px solid var(--accent-color);
             color: #fff;
         }
 
@@ -199,6 +199,15 @@
             width: 20px; /* Inner icon size */
             height: 20px;
             display: block;
+        }
+
+        a {
+            color: var(--accent-color);
+            text-decoration: none; /* Optional: removes the default underline */
+        }
+
+        a:hover {
+            text-decoration: underline; /* Optional: adds underline on hover */
         }
         /* --- TOOLTIP RENDER --- */
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
@@ -281,10 +290,13 @@
     <div class="container">
         <div class="controls-panel">
             <div class="app-header">
-            <img src="public/ui/tooltip_logo.svg" alt="WoW Tooltip Creator" class="header-logo">
+            <img src="public/ui/tooltip_logo.svg" alt="The Tooltip Maker by Guild Forging" class="header-logo">
+            <h1>Custom WoW Tooltip Maker</h1>
             <p class="header-desc">
                 Create custom World of Warcraft tooltips for items, spells, and talents. 
-                Design authentic classic and retail tooltips with our easy-to-use generator.
+                Supports both <strong>Classic</strong> and <strong>Retail</strong> styles. 
+                It’s free, and always will be. 
+                Questions or suggestions? Join our Discord!
             </p>
             <div class="header-nav">
             <button class="btn-nav">Tutorials</button>
