@@ -120,7 +120,57 @@
         .folder-icon { font-size: 24px; margin-bottom: 5px; color: #ffd100; }
 
         .btn-download { background: var(--accent-color); color: #fff; border: none; padding: 10px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        
+        /* Container adjustments */
+        .app-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color); /* Optional separator */
+            padding-bottom: 20px;
+        }
 
+        /* Logo Styling */
+        .header-logo {
+            width: 50%;       /* Takes 50% of section width */
+            height: auto;     /* Maintains aspect ratio */
+            display: block;
+            margin: 0 auto 15px auto; /* Centers it */
+        }
+
+        /* SEO Text Styling */
+        .header-desc {
+            color: #999;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+
+        /* Button Container */
+        .header-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Grey Buttons (Upload-like style) */
+        .btn-nav {
+            flex: 1;
+            background: #222;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            padding: 8px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover {
+            background: #333;
+            border-color: var(--accent-color);
+            color: #fff;
+        }
         /* --- TOOLTIP RENDER --- */
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
         #tooltip-render-area { position: relative; padding: 20px; display: inline-block; }
@@ -207,8 +257,8 @@
                 Design authentic classic and retail tooltips with our easy-to-use generator.
             </p>
             <div class="header-nav">
-                <button class="btn-icon-action">Tutorials</button>
-                <button class="btn-icon-action">Guild Forging</button>
+                <button class="btn-nav">Tutorials</button>
+                <button class="btn-nav">Guild Forging</button>
             </div>
         </div>
             
