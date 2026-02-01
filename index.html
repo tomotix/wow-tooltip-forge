@@ -154,9 +154,9 @@
 
         /* Grey Buttons (Upload-like style) */
         .btn-nav {
+            background: #333;
             flex: 1;
-            background: #222;
-            border: 1px solid #444;
+            background: var(--accent-color);
             color: #e0e0e0;
             padding: 8px 0;
             border-radius: 4px;
@@ -167,8 +167,7 @@
         }
 
         .btn-nav:hover {
-            background: #333;
-            border-color: var(--accent-color);
+            background: var(--accent-color);
             color: #fff;
         }
         /* --- TOOLTIP RENDER --- */
@@ -193,7 +192,7 @@
         #display-ilvl, #display-binding { font-size: 13px; line-height: 1.5; }
         .tooltip-header { display: flex; gap: 12px; margin-bottom: 2px; }
         .tooltip-text-col { display: flex; flex-direction: column; justify-content: center; width: 100%; }
-        .tooltip-title { font-size: 18px; margin-bottom: 2px; line-height: 1.2; }
+        .tooltip-title { font-size: 16px; margin-bottom: 2px; line-height: 1.2; }
         .tooltip-sub { font-size: 13px; color: #fff; margin-bottom: 4px; }
         .text-right { float: right; }
         .line-group { font-size: 13px; color: #ffd100; line-height: 1.5; }
