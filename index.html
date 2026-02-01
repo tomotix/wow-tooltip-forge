@@ -85,15 +85,6 @@
         .custom-stat-row { display: flex; gap: 5px; margin-top: 5px; align-items: center; }
         .custom-val-input { width: 60px !important; }
 
-        .folder-cover {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-            margin-bottom: 5px;
-            border: 1px solid #444;
-            border-radius: 4px;
-        }
-
         /* --- ICON PICKER & MODAL --- */
         .icon-picker-row { display: flex; gap: 8px; }
         .btn-icon-action { flex: 1; height: 38px; padding: 0 10px; background: #222; border: 1px solid #444; color: #e0e0e0; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
@@ -571,77 +562,25 @@
             renderLibrary();
         }
 
-function renderLibrary() {
+        function renderLibrary() {
             const grid = document.getElementById('icon-grid'); 
             grid.innerHTML = '';
             const backBtn = document.getElementById('btn-back');
             const term = document.getElementById('icon-search').value.toLowerCase();
 
-            // VIEW 1: FOLDERS (No folder selected & No search term)
+            // VIEW 1: FOLDERS
             if (!currentFolder && !term) {
                 backBtn.classList.add('hidden');
                 
                 Object.keys(ICON_LIBRARY).forEach(folderName => {
                     const div = document.createElement('div'); 
                     div.className = 'folder-option';
-                    
-                    // --- NEW LOGIC: Get the first icon as cover ---
-                    let iconHtml = '<div class="folder-icon">📁</div>'; // Default fallback
-                    
-                    // Check if folder has items and grab the first one
-                    if (ICON_LIBRARY[folderName] && ICON_LIBRARY[folderName].length > 0) {
-                        const firstIcon = ICON_LIBRARY[folderName][0];
-                        const path = `public/icons/${folderName}/${firstIcon}.png`;
-                        iconHtml = `<img src="${path}" class="folder-cover" loading="lazy">`;
-                    }
-                    // ----------------------------------------------
-
-                    div.innerHTML = `${iconHtml}<div>${folderName}</div>`;
+                    div.innerHTML = `<div class="folder-icon">📁</div><div>${folderName}</div>`;
                     div.onclick = () => { currentFolder = folderName; renderLibrary(); };
                     grid.appendChild(div);
                 });
                 return;
             }
-
-            // VIEW 2: ICONS (Folder selected OR Searching)
-            backBtn.classList.remove('hidden');
-
-            let iconsToShow = [];
-            
-            if (term) {
-                // Search across ALL folders
-                Object.keys(ICON_LIBRARY).forEach(folder => {
-                    const matches = ICON_LIBRARY[folder].filter(icon => icon.toLowerCase().includes(term));
-                    matches.forEach(m => iconsToShow.push({ name: m, folder: folder }));
-                });
-            } else {
-                // Show only current folder
-                if (ICON_LIBRARY[currentFolder]) {
-                    iconsToShow = ICON_LIBRARY[currentFolder].map(i => ({ name: i, folder: currentFolder }));
-                }
-            }
-
-            if(iconsToShow.length === 0) {
-                grid.innerHTML = '<div style="color:#666; padding:20px;">No icons found.</div>';
-                return;
-            }
-
-            iconsToShow.forEach(item => {
-                const div = document.createElement('div'); div.className = 'icon-option';
-                // Path structure: public/icons/FOLDER/name.png
-                const path = `public/icons/${item.folder}/${item.name}.png`;
-                
-                div.onclick = () => { 
-                    document.getElementById('display-icon').src = path; 
-                    closeIconModal(); 
-                };
-                
-                const img = document.createElement('img'); 
-                img.src = path;
-                img.loading = "lazy";
-                div.appendChild(img); grid.appendChild(div);
-            });
-        }
 
             // VIEW 2: ICONS
             backBtn.classList.remove('hidden');
