@@ -44,6 +44,12 @@
         .container { display: flex; width: 100%; height: 100%; flex-direction: row; }
         .controls-panel { width: 450px; background-color: var(--panel-bg); border-right: 1px solid var(--border-color); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; flex-shrink: 0; }
         .preview-panel { flex: 1; background-color: #111; background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/World_of_Warcraft_Logo.svg/1200px-World_of_Warcraft_Logo.svg.png'); background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; position: relative; }
+       
+        /* --- ICON LIBRARY SCROLLBAR --- */
+        .icon-grid::-webkit-scrollbar { width: 10px; }
+        .icon-grid::-webkit-scrollbar-track { background: #1b1b1b; }
+        .icon-grid::-webkit-scrollbar-thumb { background: #e66306; border-radius: 5px; }
+        .icon-grid { scrollbar-width: thin; scrollbar-color: #e66306 #1b1b1b; }
 
         @media (max-width: 900px) {
             .container { flex-direction: column; }
@@ -298,10 +304,10 @@
                 Questions or suggestions? Join our Discord!
             </p>
             <div class="header-nav">
-            <button class="btn-nav">Tutorials</button>
-            <button class="btn-nav">Guild Forging</button>
+            <button class="btn-nav" onclick="window.open('https://guildforging.com/', '_blank')">Tutorials</button>
+            <button class="btn-nav" onclick="window.open('https://guildforging.com/', '_blank')">Guild Forging</button>
             <!-- New Discord Button -->
-            <button class="btn-discord" onclick="window.open('YOUR_DISCORD_LINK_HERE', '_blank')">
+            <button class="btn-discord" onclick="window.open('https://discord.gg/hN2YcPAd5r', '_blank')">
                 <img src="public/ui/discord.svg" alt="Discord">
             </button>
             </div>
