@@ -650,11 +650,11 @@
 
             // Defaults
             const strChk = document.getElementById('chk-stat-Strength');
-            if(strChk) { strChk.checked = true; toggleStatInput('Strength'); document.getElementById('val-stat-Strength').value = 10; }
+            if(strChk) { strChk.checked = false; toggleStatInput('Strength'); document.getElementById('val-stat-Strength').value = 10; }
             const intChk = document.getElementById('chk-stat-Intellect');
-            if(intChk) { intChk.checked = true; toggleStatInput('Intellect'); document.getElementById('val-stat-Intellect').value = 10; }
+            if(intChk) { intChk.checked = false; toggleStatInput('Intellect'); document.getElementById('val-stat-Intellect').value = 10; }
             const fireChk = document.getElementById('chk-stat-FireResistance');
-            if(fireChk) { fireChk.checked = true; toggleStatInput('FireResistance'); document.getElementById('val-stat-FireResistance').value = 15; }
+            if(fireChk) { fireChk.checked = false; toggleStatInput('FireResistance'); document.getElementById('val-stat-FireResistance').value = 15; }
 
             document.querySelectorAll('.chk-class-item').forEach(chk => {
                 if(chk.value === 'Mage' || chk.value === 'Druid') chk.checked = true;
