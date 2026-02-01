@@ -154,11 +154,14 @@
 
         /* Grey Buttons (Upload-like style) */
         .btn-nav {
+            flex: 1;
             background: #333;
             border: 1px solid #333;
-            flex: 1;
             color: #e0e0e0;
-            padding: 8px 0;
+            height: 32px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.85rem;
@@ -172,6 +175,31 @@
             color: #fff;
         }
 
+        .btn-discord {
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px; /* Fixes width to 32px, prevents growing/shrinking */
+            background: #5865F2; /* Standard Discord Color - change if needed */
+            border: 1px solid #4752c4;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+        }
+
+        .btn-discord:hover {
+            background: #4752c4;
+            border-color: #fff;
+        }
+
+        .btn-discord img {
+            width: 20px; /* Inner icon size */
+            height: 20px;
+            display: block;
+        }
         /* --- TOOLTIP RENDER --- */
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
         #tooltip-render-area { position: relative; padding: 20px; display: inline-block; }
@@ -259,8 +287,12 @@
                 Design authentic classic and retail tooltips with our easy-to-use generator.
             </p>
             <div class="header-nav">
-                <button class="btn-nav">Tutorials</button>
-                <button class="btn-nav">Guild Forging</button>
+            <button class="btn-nav">Tutorials</button>
+            <button class="btn-nav">Guild Forging</button>
+            <!-- New Discord Button -->
+            <button class="btn-discord" onclick="window.open('YOUR_DISCORD_LINK_HERE', '_blank')">
+                <img src="public/ui/discord.svg" alt="Discord">
+            </button>
             </div>
         </div>
             
@@ -576,7 +608,7 @@
             
             <!-- Desktop Text -->
             <p class="copyright-text">
-                World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This website is a fan-made project and is not affiliated with, endorsed, sponsored, or specifically approved by Blizzard Entertainment. All original assets and content are property of their respective owners.
+                World of Warcraft, Warcraft and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. This website is a fan-made project and is not affiliated with, endorsed, sponsored, or specifically approved by Blizzard Entertainment. All original assets and content are property of their respective owners. Special thanks to <a href="https://barrens.chat/viewtopic.php?t=63" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;">Teebling</a> for gathering the icon resources used in this generator.
             </p>
 
             <!-- Mobile Placeholder/Spoiler -->
