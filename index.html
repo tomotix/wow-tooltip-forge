@@ -131,7 +131,7 @@
 
         /* Logo Styling */
         .header-logo {
-            width: 50%;       /* Takes 50% of section width */
+            width: 80%;       /* Takes 50% of section width */
             height: auto;     /* Maintains aspect ratio */
             display: block;
             margin: 0 auto 15px auto; /* Centers it */
@@ -155,6 +155,7 @@
         /* Grey Buttons (Upload-like style) */
         .btn-nav {
             background: #333;
+            border: 1px solid #333;
             flex: 1;
             color: #e0e0e0;
             padding: 8px 0;
@@ -167,8 +168,10 @@
 
         .btn-nav:hover {
             background: var(--accent-color);
+            border: 1px solid var(--accent-color);;
             color: #fff;
         }
+
         /* --- TOOLTIP RENDER --- */
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
         #tooltip-render-area { position: relative; padding: 20px; display: inline-block; }
