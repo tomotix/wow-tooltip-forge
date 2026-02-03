@@ -6,6 +6,8 @@
     <title>WoW Tooltip Creator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="icons.js"></script>
+    <script data-goatcounter="https://guildforging.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
     <style>
         /* --- CORE VARIABLES --- */
         :root {
@@ -582,7 +584,14 @@
                 <input type="text" id="inp-req" value="Requires Level 60" oninput="updateTooltip()">
             </div>
 
-            <div class="action-bar"><button class="btn-download" onclick="downloadTooltip()">Download PNG</button></div>
+            <div class="action-bar">
+            <button class="btn-download" 
+                    onclick="downloadTooltip()" 
+                    data-goatcounter-click="download-tooltip" 
+                    data-goatcounter-title="Download PNG Clicked">
+                Download PNG
+            </button>
+            </div>
             <div style="height: 40px;"></div>
         </div>
 
@@ -1056,4 +1065,5 @@
         }
     </script>
 </body>
+
 </html>
