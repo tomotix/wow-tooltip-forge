@@ -410,8 +410,8 @@
                 
                 <div id="cat-armor" class="hidden">
                     <div class="settings-grid">
-                        <div class="form-group"><label>Material</label><select id="inp-armor-material" onchange="updateTooltip()"><option>Cloth</option><option>Leather</option><option>Mail</option><option>Plate</option></select></div>
-                        <div class="form-group"><label>Slot</label><select id="inp-armor-slot" onchange="updateTooltip()"><option>Head</option><option>Shoulder</option><option>Chest</option><option>Waist</option><option>Legs</option><option>Feet</option></select></div>
+                        <div class="form-group"><label>Type</label><select id="inp-armor-material" onchange="updateTooltip()"><option>Cloth</option><option>Leather</option><option>Mail</option><option>Plate</option></select></div>
+                        <div class="form-group"><label>Slot</label><select id="inp-armor-slot" onchange="updateTooltip()"><option>Chest</option><option>Feet</option><option>Hands</option><option>Head</option><option>Legs</option><option>Shoulder</option><option>Waist</option><option>Wrist</option></select></div>
                     </div>
                 </div>
 
@@ -575,7 +575,28 @@
                 <select id="inp-effect-trigger" onchange="updateTooltip()"><option value="">No Trigger</option><option value="Equip: " selected>Equip</option><option value="Use: ">Use</option><option value="Chance on hit: ">Chance on hit</option></select>
             </div>
             <div class="form-group"><textarea id="inp-effect" oninput="updateTooltip()">Increases the strength of your Guild’s unity by 50.</textarea></div>
-            <div class="form-group"><label>Flavor (Gold)</label><textarea id="inp-flavor" rows="2" oninput="updateTooltip()">"You're the closest to heaven that I'll ever be..."</textarea></div>
+            <h3>Set (Optional)</h3>
+            <div class="form-group">
+                <div class="label-row"><label>Add Set</label><input type="checkbox" id="chk-set" onchange="toggleSetUI()"></div>
+            </div>
+
+            <div id="set-section" class="hidden">
+                <div class="settings-grid">
+                    <div class="form-group"><label>Set Name</label><input type="text" id="inp-set-name" placeholder="e.g. Spellstrike Infusion" oninput="updateTooltip()"></div>
+                    <div class="form-group"><label>Total Pieces</label><input type="number" id="inp-set-pieces" min="2" max="8" value="2" oninput="updateSetPieces(); updateTooltip()"></div>
+                </div>
+
+                <div class="form-group"><label>Requires Profession (Optional)</label><div style="display: flex; gap: 5px;"><input type="text" id="inp-set-profession" placeholder="e.g. Tailoring, Leatherworking" oninput="updateTooltip()"></div></div>
+
+                <h3 style="margin-top: 12px;">Set Items</h3>
+                <div id="set-items-container"></div>
+
+                <h3 style="margin-top: 12px;">Set Bonuses</h3>
+                <div id="set-bonuses-container"></div>
+                <button class="btn-add-stat" onclick="addSetBonus()" style="margin-bottom: 10px;">+ Add Set Bonus</button>
+            </div>
+
+            <div class="form-group"><label>Flavor Text</label><textarea id="inp-flavor" rows="2" oninput="updateTooltip()">"You're the closest to heaven that I'll ever be..."</textarea></div>
             
             <div class="form-group"><label style="font-size: 0.8rem; color: #888; margin-bottom: 5px; display: block;">Classes (Optional)</label><div id="class-selector-container" class="class-grid"></div></div>
 
@@ -627,6 +648,8 @@
                         <div id="display-classes" class="line-group line-white"></div>
                         <div id="display-req" class="line-group line-white">Requires Level 60</div>
                         <div id="display-effect" class="line-group line-green" style="margin-top: 5px; margin-bottom: 10px;"></div>
+                        <div id="display-set-items" class="line-group hidden" style="margin-top: 10px; margin-bottom: 8px;"></div>
+                        <div id="display-set-bonuses" class="line-group hidden"></div>
                         <div id="display-flavor" class="line-group line-flavor">"You're the closest to heaven that I'll ever be..."</div>
                     </div>
                 </div>
@@ -1049,12 +1072,110 @@
             document.querySelectorAll('.chk-class-item').forEach(c => { if(c.checked) sel.push(`<span style="color:${c.dataset.color}">${c.value}</span>`); });
             clDisp.innerHTML = sel.length ? 'Classes: ' + sel.join(', ') : ""; clDisp.classList.toggle('hidden', !sel.length);
             
+            // Set display logic
+            const setCheck = document.getElementById('chk-set')?.checked;
+            const setDisplay = document.getElementById('display-set-items');
+            const setBonusDisplay = document.getElementById('display-set-bonuses');
+            
+            if(setCheck) {
+                const setName = document.getElementById('inp-set-name').value;
+                const setProf = document.getElementById('inp-set-profession').value;
+                const numPieces = parseInt(document.getElementById('inp-set-pieces').value) || 2;
+                
+                // Display set items - reordered with consistent spacing
+                let setItemsHtml = '';
+                if(setName) {
+                    // Set name
+                    setItemsHtml += `<div style="color: #ffd100; font-weight: bold; font-size: 13px; display: block;">${setName} (0/${numPieces})</div>`;
+                    
+                    // Requires line
+                    if(setProf) {
+                        setItemsHtml += `<div style="color: #fff; font-size: 13px; display: block;">Requires ${setProf}</div>`;
+                    }
+                    
+                    // Items
+                    document.querySelectorAll('.set-item-input').forEach(input => {
+                        if(input.value) {
+                            setItemsHtml += `<div style="color: #9d9d9d; font-size: 13px; display: block;">${input.value}</div>`;
+                        }
+                    });
+                }
+                
+                setDisplay.innerHTML = setItemsHtml;
+                setDisplay.classList.toggle('hidden', !setItemsHtml);
+                
+                // Display set bonuses
+                let setBonusHtml = '';
+                document.querySelectorAll('.set-bonus-row').forEach(row => {
+                    const pieces = row.querySelector('.set-bonus-pieces').value;
+                    const text = row.querySelector('.set-bonus-text').value;
+                    if(text) {
+                        setBonusHtml += `<div style="color: #9d9d9d; font-size: 13px; display: block;">(${pieces}) Set: ${text}</div>`;
+                    }
+                });
+                
+                setBonusDisplay.innerHTML = setBonusHtml;
+                setBonusDisplay.classList.toggle('hidden', !setBonusHtml);
+            } else {
+                setDisplay.classList.add('hidden');
+                setBonusDisplay.classList.add('hidden');
+            }
+            
             const req = document.getElementById('inp-req').value, rCheck = document.getElementById('chk-req').checked, rEl = document.getElementById('display-req');
             rEl.textContent = req; rEl.classList.toggle('hidden', !(req && rCheck));
             
             const fl = document.getElementById('inp-flavor').value, flEl = document.getElementById('display-flavor');
             flEl.textContent = fl;
             flEl.classList.toggle('hidden', !fl);
+        }
+
+        function toggleSetUI() {
+            const setSection = document.getElementById('set-section');
+            const chkSet = document.getElementById('chk-set').checked;
+            setSection.classList.toggle('hidden', !chkSet);
+            if(chkSet) {
+                updateSetPieces();
+            } else {
+                document.getElementById('set-items-container').innerHTML = '';
+                document.getElementById('set-bonuses-container').innerHTML = '';
+            }
+            updateTooltip();
+        }
+
+        function updateSetPieces() {
+            const numPieces = parseInt(document.getElementById('inp-set-pieces').value) || 2;
+            const container = document.getElementById('set-items-container');
+            container.innerHTML = '';
+            
+            for(let i = 1; i <= numPieces; i++) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'form-group';
+                itemDiv.innerHTML = `<label>Item ${i}</label><input type="text" class="set-item-input" placeholder="e.g. Spellstrike Hood" data-index="${i}" oninput="updateTooltip()">`;
+                container.appendChild(itemDiv);
+            }
+        }
+
+        function addSetBonus() {
+            const container = document.getElementById('set-bonuses-container');
+            const numPieces = parseInt(document.getElementById('inp-set-pieces').value) || 2;
+            const bonusCount = container.querySelectorAll('.set-bonus-row').length;
+            
+            if(bonusCount >= numPieces) {
+                alert(`Maximum ${numPieces} set bonuses allowed for this set size.`);
+                return;
+            }
+
+            const bonusDiv = document.createElement('div');
+            bonusDiv.className = 'set-bonus-row';
+            bonusDiv.style.cssText = 'display: flex; gap: 5px; margin-bottom: 8px; align-items: flex-start;';
+            
+            bonusDiv.innerHTML = `
+                <input type="number" class="set-bonus-pieces" min="2" max="${numPieces}" value="2" placeholder="Pieces" oninput="updateTooltip()" style="width: 60px !important;">
+                <input type="text" class="set-bonus-text" placeholder="Set bonus text..." oninput="updateTooltip()" style="flex: 1;">
+                <button onclick="this.parentElement.remove(); updateTooltip();" style="padding: 6px 10px; background: #333; border: 1px solid #555; color: #ccc; cursor: pointer; border-radius: 4px; font-size: 0.75rem;">Remove</button>
+            `;
+            
+            container.appendChild(bonusDiv);
         }
 
         function downloadTooltip() {
