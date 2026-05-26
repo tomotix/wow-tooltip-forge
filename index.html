@@ -236,7 +236,7 @@
         .border-retail-icon .tooltip-icon { border: 1px solid #555; box-shadow: 0 0 0 1px #000; }
 
         /* Tooltip Content */
-        #display-ilvl, #display-binding { font-size: 13px; line-height: 1.5; }
+        #display-ilvl, #display-binding, #display-mount-unique { font-size: 13px; line-height: 1.5; }
         .tooltip-header { display: flex; gap: 12px; margin-bottom: 2px; }
         .tooltip-text-col { display: flex; flex-direction: column; justify-content: center; width: 100%; }
         .tooltip-title { font-size: 16px; margin-bottom: 2px; line-height: 1.2; }
@@ -405,9 +405,10 @@
                         <option value="jewelry">Jewelry</option>
                         <option value="relic">Relic</option>
                         <option value="other">Other</option>
+                        <option value="mount">Mount</option>
                     </select>
                 </div>
-                
+
                 <div id="cat-armor" class="hidden">
                     <div class="settings-grid">
                         <div class="form-group"><label>Type</label><select id="inp-armor-material" onchange="updateTooltip()"><option>Cloth</option><option>Leather</option><option>Mail</option><option>Plate</option></select></div>
@@ -472,7 +473,33 @@
                         <option value="Miscellaneous">Miscellaneous</option>
                     </select>
                 </div>
-                
+
+                <div id="cat-mount" class="hidden">
+                    <div class="form-group">
+                        <label><input type="checkbox" id="chk-mount-unique" onchange="updateTooltip()"> Unique</label>
+                    </div>
+                    <div class="form-group">
+                        <label>Requires</label>
+                        <div style="display: flex; gap: 5px;">
+                            <select id="inp-mount-skill" onchange="updateMountSkillVisibility(); updateTooltip()">
+                                <option value="Riding">Riding</option>
+                                <option value="Alchemy">Alchemy</option>
+                                <option value="Blacksmithing">Blacksmithing</option>
+                                <option value="Enchanting">Enchanting</option>
+                                <option value="Engineering">Engineering</option>
+                                <option value="Inscription">Inscription</option>
+                                <option value="Jewelcrafting">Jewelcrafting</option>
+                                <option value="Leatherworking">Leatherworking</option>
+                                <option value="Tailoring">Tailoring</option>
+                            </select>
+                            <input type="number" id="inp-mount-skill-level" min="0" max="999" value="300" oninput="updateTooltip()" style="width: 70px !important;">
+                        </div>
+                    </div>
+                    <div class="form-group hidden" id="group-mount-account-wide">
+                        <label><input type="checkbox" id="chk-mount-account-wide" onchange="updateTooltip()"> Account-wide</label>
+                    </div>
+                </div>
+
                 <div class="form-group hidden" id="group-armor">
                     <label>Armor Amount</label>
                     <input type="number" id="inp-armor" placeholder="e.g. 500" oninput="updateTooltip()">
@@ -487,11 +514,14 @@
                     </div>
                 </div>
 
+                <div id="stats-section">
                 <h3>Stats</h3>
                 <div class="stats-builder" id="stats-container"></div>
                 <div id="custom-stats-container"></div>
                 <button class="btn-add-stat" onclick="addCustomStat()">+ Custom Stat</button>
+                </div>
 
+                <div id="sockets-section">
                 <h3>Sockets</h3>
                 <div class="form-group">
                     <div style="display: flex; gap: 5px;">
@@ -534,8 +564,9 @@
                     <div class="label-row"><label>Socket Bonus</label><input type="checkbox" id="chk-socket-bonus" onchange="updateTooltip()"></div>
                     <input type="text" id="inp-socket-bonus" value="+5 Strength" oninput="updateTooltip()">
                 </div>
-                
-                <div class="form-group"><label>Durability</label><input type="text" id="inp-durability" value="100 / 100" oninput="updateTooltip()"></div>
+                </div>
+
+                <div class="form-group" id="group-durability"><label>Durability</label><input type="text" id="inp-durability" value="100 / 100" oninput="updateTooltip()"></div>
             </div>
 
             <div id="fields-spell" class="hidden">
@@ -575,9 +606,11 @@
                 <select id="inp-effect-trigger" onchange="updateTooltip()"><option value="">No Trigger</option><option value="Equip: " selected>Equip</option><option value="Use: ">Use</option><option value="Chance on hit: ">Chance on hit</option></select>
             </div>
             <div class="form-group"><textarea id="inp-effect" oninput="updateTooltip()">Increases the strength of your Guild’s unity by 50.</textarea></div>
+            <div id="group-set-header">
             <h3>Set (Optional)</h3>
             <div class="form-group">
                 <div class="label-row"><label>Add Set</label><input type="checkbox" id="chk-set" onchange="toggleSetUI()"></div>
+            </div>
             </div>
 
             <div id="set-section" class="hidden">
@@ -597,7 +630,22 @@
             </div>
 
             <div class="form-group"><label>Flavor Text</label><textarea id="inp-flavor" rows="2" oninput="updateTooltip()">"You're the closest to heaven that I'll ever be..."</textarea></div>
-            
+
+            <div class="form-group hidden" id="group-mount-profession-ui">
+                <label>Profession</label>
+                <select id="inp-mount-profession" onchange="updateTooltip()">
+                    <option value="">None</option>
+                    <option value="Alchemy">Alchemy</option>
+                    <option value="Blacksmithing">Blacksmithing</option>
+                    <option value="Enchanting">Enchanting</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Inscription">Inscription</option>
+                    <option value="Jewelcrafting">Jewelcrafting</option>
+                    <option value="Leatherworking">Leatherworking</option>
+                    <option value="Tailoring">Tailoring</option>
+                </select>
+            </div>
+
             <div class="form-group"><label style="font-size: 0.8rem; color: #888; margin-bottom: 5px; display: block;">Classes (Optional)</label><div id="class-selector-container" class="class-grid"></div></div>
 
             <div class="form-group" id="group-req">
@@ -629,6 +677,7 @@
                                 <div id="display-rank" class="tooltip-sub hidden"></div>
                                 <div id="display-ilvl" class="line-gold">Item Level 67</div>
                                 <div id="display-binding" class="line-white">Binds when picked up</div>
+                                <div id="display-mount-unique" class="line-white hidden">Unique</div>
                             </div>
                         </div>
                         <div id="section-item-type" class="line-group line-white"><span id="display-slot">One-Hand</span><span id="display-subtype" class="text-right">Mace</span></div>
@@ -647,10 +696,12 @@
                         <div id="display-durability" class="line-group line-white"></div>
                         <div id="display-classes" class="line-group line-white"></div>
                         <div id="display-req" class="line-group line-white">Requires Level 60</div>
+                        <div id="display-mount-requires" class="line-group line-white hidden"></div>
                         <div id="display-effect" class="line-group line-green" style="margin-top: 5px; margin-bottom: 10px;"></div>
                         <div id="display-set-items" class="line-group hidden" style="margin-top: 10px; margin-bottom: 8px;"></div>
                         <div id="display-set-bonuses" class="line-group hidden"></div>
                         <div id="display-flavor" class="line-group line-flavor">"You're the closest to heaven that I'll ever be..."</div>
+                        <div id="display-mount-profession" class="line-group hidden"></div>
                     </div>
                 </div>
             </div>
@@ -842,13 +893,87 @@
 
         function handleCategoryChange() {
             const cat = document.getElementById('inp-category').value;
-            ['cat-armor', 'cat-weapon', 'cat-jewelry', 'cat-relic', 'cat-other'].forEach(id => {
+            ['cat-armor', 'cat-weapon', 'cat-jewelry', 'cat-relic', 'cat-other', 'cat-mount'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.classList.add('hidden');
             });
             const selected = document.getElementById('cat-' + cat);
             if(selected) selected.classList.remove('hidden');
+
+            const isMount = cat === 'mount';
+            ['stats-section', 'sockets-section', 'group-durability'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.toggle('hidden', isMount);
+            });
+
+            updateEffectTriggerForCategory(cat);
+
+            const setHeaderEl = document.getElementById('group-set-header');
+            const setBodyEl = document.getElementById('set-section');
+            if(isMount) {
+                if(setHeaderEl) setHeaderEl.classList.add('hidden');
+                if(setBodyEl) setBodyEl.classList.add('hidden');
+                const chkSet = document.getElementById('chk-set');
+                if(chkSet) chkSet.checked = false;
+
+                const mountName = document.getElementById('inp-name').value || 'this mount';
+                document.getElementById('inp-effect').value = `Summons and dismisses a ${mountName}. This is a very fast mount. (3 Sec Cooldown)`;
+
+                updateMountEraFields();
+            } else {
+                if(setHeaderEl) setHeaderEl.classList.remove('hidden');
+                const profEl = document.getElementById('group-mount-profession-ui');
+                if(profEl) profEl.classList.add('hidden');
+            }
+
             updateTooltip();
+        }
+
+        function updateEffectTriggerForCategory(cat) {
+            const sel = document.getElementById('inp-effect-trigger');
+            if(cat === 'mount') {
+                Array.from(sel.options).forEach(opt => { opt.hidden = opt.value !== 'Use: '; });
+                sel.value = 'Use: ';
+            } else {
+                Array.from(sel.options).forEach(opt => { opt.hidden = false; });
+            }
+        }
+
+        function updateMountSkillVisibility() {
+            const skill = document.getElementById('inp-mount-skill')?.value;
+            const levelInput = document.getElementById('inp-mount-skill-level');
+            if(!levelInput) return;
+            const ridingTiers = ['Apprentice Riding', 'Journeyman Riding', 'Expert Riding', 'Master Riding'];
+            levelInput.classList.toggle('hidden', currentEra === 'retail' && ridingTiers.includes(skill));
+        }
+
+        function updateMountEraFields() {
+            const cat = document.getElementById('inp-category').value;
+            if(cat !== 'mount') return;
+            const isRetail = currentEra === 'retail';
+
+            const accountWideEl = document.getElementById('group-mount-account-wide');
+            if(accountWideEl) accountWideEl.classList.toggle('hidden', !isRetail);
+
+            const profEl = document.getElementById('group-mount-profession-ui');
+            if(profEl) profEl.classList.toggle('hidden', !isRetail);
+
+            const skillSel = document.getElementById('inp-mount-skill');
+            if(!skillSel) return;
+            const currentSkill = skillSel.value;
+            skillSel.innerHTML = '';
+
+            const classicOptions = ['Riding','Alchemy','Blacksmithing','Enchanting','Engineering','Inscription','Jewelcrafting','Leatherworking','Tailoring'];
+            const retailOptions = ['Apprentice Riding','Journeyman Riding','Expert Riding','Master Riding','Alchemy','Blacksmithing','Enchanting','Engineering','Inscription','Jewelcrafting','Leatherworking','Tailoring'];
+            const options = isRetail ? retailOptions : classicOptions;
+
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt; o.textContent = opt;
+                skillSel.appendChild(o);
+            });
+            skillSel.value = options.includes(currentSkill) ? currentSkill : options[0];
+            updateMountSkillVisibility();
         }
 
         function renderStatInputs() {
@@ -894,7 +1019,7 @@
             document.getElementById('group-quality').classList.toggle('hidden', type !== 'item');
             updateTooltip(); 
         }
-        function setEra(era) { currentEra = era; highlightGroup('group-era', era === 'retail' ? 'modern' : 'classic'); renderStatInputs(); renderClassInputs(); updateTooltip(); }
+        function setEra(era) { currentEra = era; highlightGroup('group-era', era === 'retail' ? 'modern' : 'classic'); renderStatInputs(); renderClassInputs(); updateMountEraFields(); updateTooltip(); }
         
         function setBorder(style) { 
             currentBorder = style; highlightGroup('group-border', style === 'retail' ? 'modern' : 'classic');
@@ -984,10 +1109,17 @@
                     else if (oType === "Shirt") { slot = "Shirt"; sub = ""; }
                     else if (oType === "Tabard") { slot = "Tabard"; sub = ""; }
                     else { slot = ""; sub = "Miscellaneous"; }
+                } else if(cat === 'mount') {
+                    slot = 'Mount';
                 }
 
-                document.getElementById('display-slot').textContent = slot; 
-                document.getElementById('display-subtype').textContent = sub;
+                if(cat === 'mount' && currentEra === 'retail' && document.getElementById('chk-mount-account-wide')?.checked) {
+                    document.getElementById('display-slot').innerHTML = 'Mount <span style="color:#9d9d9d">(Account-wide)</span>';
+                    document.getElementById('display-subtype').textContent = '';
+                } else {
+                    document.getElementById('display-slot').textContent = slot;
+                    document.getElementById('display-subtype').textContent = sub;
+                }
                 document.getElementById('group-armor').classList.toggle('hidden', !showArmor);
                 document.getElementById('group-weapon-stats').classList.toggle('hidden', !showDmg);
                 
@@ -1005,7 +1137,30 @@
                     dpsEl.classList.toggle('hidden', !document.getElementById('chk-show-dps').checked);
                 } else document.getElementById('section-weapon').classList.add('hidden');
 
+                // mount-unique
+                const mountUniqueEl = document.getElementById('display-mount-unique');
+                if(mountUniqueEl) mountUniqueEl.classList.toggle('hidden', !(cat === 'mount' && document.getElementById('chk-mount-unique')?.checked));
+
+                // mount-requires
+                const mountRequiresEl = document.getElementById('display-mount-requires');
+                if(mountRequiresEl) {
+                    if(cat === 'mount') {
+                        const skill = document.getElementById('inp-mount-skill')?.value;
+                        const skillLevel = document.getElementById('inp-mount-skill-level')?.value;
+                        const ridingTiers = ['Apprentice Riding','Journeyman Riding','Expert Riding','Master Riding'];
+                        if(skill) {
+                            mountRequiresEl.textContent = ridingTiers.includes(skill) ? `Requires ${skill}` : `Requires ${skill} (${skillLevel})`;
+                            mountRequiresEl.classList.remove('hidden');
+                        } else {
+                            mountRequiresEl.classList.add('hidden');
+                        }
+                    } else {
+                        mountRequiresEl.classList.add('hidden');
+                    }
+                }
+
                 let sHtml = "";
+                if(cat !== 'mount') {
                 const statsArr = (currentEra === 'classic' ? CLASSIC_STATS : RETAIL_STATS);
                 statsArr.forEach(s => {
                     const safe = s.replace(/\s+/g, ''), chk = document.getElementById(`chk-stat-${safe}`);
@@ -1015,9 +1170,11 @@
                     const v = r.querySelector('.custom-val-input').value, n = r.querySelector('.custom-name-input').value;
                     if(v && n) sHtml += `<div class="item-property">${v} ${n}</div>`;
                 });
+                }
                 document.getElementById('display-stats').innerHTML = sHtml;
 
                 const sDisp = document.getElementById('display-sockets'); sDisp.innerHTML = "";
+                if(cat === 'mount') { document.getElementById('display-socket-bonus').classList.add('hidden'); }
                 
                 const socketMap = {
                     'Prismatic': 'Socket-Prismatic.png',
@@ -1030,6 +1187,7 @@
                     'Blue': 'Socket-Blue.png'
                 };
 
+                if(cat !== 'mount') {
                 document.querySelectorAll('.inp-socket').forEach(sel => {
                     if(sel.value) {
                         const imgFile = socketMap[sel.value];
@@ -1040,6 +1198,7 @@
 
                 const bCheck = document.getElementById('chk-socket-bonus').checked, bText = document.getElementById('inp-socket-bonus').value, bDisp = document.getElementById('display-socket-bonus');
                 if(bCheck && bText) { bDisp.innerHTML = `Socket Bonus: ${bText}`; bDisp.classList.remove('hidden'); } else bDisp.classList.add('hidden');
+                }
 
             } else {
                 ['section-item-type', 'section-weapon', 'display-stats', 'display-ilvl', 'display-binding', 'display-armor', 'display-durability'].forEach(id => {
@@ -1059,7 +1218,8 @@
             
             if(currentBase === 'item') {
                 const dv = document.getElementById('inp-durability').value, de = document.getElementById('display-durability');
-                if(dv) { de.classList.remove('hidden'); de.textContent = `Durability ${dv}`; } else de.classList.add('hidden');
+                const _cat = document.getElementById('inp-category').value;
+                if(dv && _cat !== 'mount') { de.classList.remove('hidden'); de.textContent = `Durability ${dv}`; } else de.classList.add('hidden');
             }
 
             const trig = document.getElementById('inp-effect-trigger').value;
@@ -1127,6 +1287,22 @@
             const fl = document.getElementById('inp-flavor').value, flEl = document.getElementById('display-flavor');
             flEl.textContent = fl;
             flEl.classList.toggle('hidden', !fl);
+
+            const mountProfEl = document.getElementById('display-mount-profession');
+            if(mountProfEl) {
+                const _cat2 = document.getElementById('inp-category').value;
+                if(_cat2 === 'mount' && currentBase === 'item' && currentEra === 'retail') {
+                    const prof = document.getElementById('inp-mount-profession')?.value;
+                    if(prof) {
+                        mountProfEl.innerHTML = `<span style="color:#ffd100">Profession:</span> ${prof}`;
+                        mountProfEl.classList.remove('hidden');
+                    } else {
+                        mountProfEl.classList.add('hidden');
+                    }
+                } else {
+                    mountProfEl.classList.add('hidden');
+                }
+            }
         }
 
         function toggleSetUI() {
