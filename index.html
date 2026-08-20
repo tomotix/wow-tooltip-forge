@@ -804,7 +804,16 @@
             document.getElementById('icon-search').value = "";
             renderLibrary();
         }
-        function closeIconModal() { document.getElementById('icon-modal').classList.add('hidden'); }
+        function closeIconModal() {
+            document.getElementById('icon-modal').classList.add('hidden');
+            // Clear the rendered icon grid so its <img> nodes don't linger in the DOM.
+            // html2canvas clones the whole document when it runs (see downloadTooltip),
+            // and leftover <img> elements anywhere on the page get re-requested during
+            // that clone even though they're hidden and have nothing to do with the
+            // tooltip being exported. Wiping the grid here stops the download click
+            // from silently re-fetching every icon that was ever browsed.
+            document.getElementById('icon-grid').innerHTML = '';
+        }
         
         function openCopyrightModal() { document.getElementById('copyright-modal').classList.remove('hidden'); }
         function closeCopyrightModal() { document.getElementById('copyright-modal').classList.add('hidden'); }
@@ -1356,7 +1365,14 @@
 
         function downloadTooltip() {
             const node = document.getElementById('tooltip-render-area');
-            html2canvas(node, { backgroundColor: null, scale: 2 }).then(canvas => {
+            html2canvas(node, {
+                backgroundColor: null,
+                scale: 2,
+                // Belt-and-suspenders: even with closeIconModal() clearing the grid,
+                // explicitly tell html2canvas to skip the icon picker entirely so its
+                // document-clone step can never re-trigger requests for browsed icons.
+                ignoreElements: el => el.id === 'icon-modal'
+            }).then(canvas => {
                 const link = document.createElement('a'); link.download = 'wow-tooltip.png'; link.href = canvas.toDataURL(); link.click();
             });
         }
